@@ -96,5 +96,6 @@
     "tailwindcss": {
       "nanoid": "3.3.7"
     }
-  }
+  },
+  "packageManager": "npm@10.9.4+sha512.OnUG836FwboQIbqtefDNlyR0gTHzIfwRfE3DuiNewBvnMnWEpB0VEXwBlFVgqpNzIgYo/MHh3d2Hel/pszapAA=="
 }
