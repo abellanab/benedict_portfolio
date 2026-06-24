@@ -123,6 +123,11 @@
     outline-color: var(--ring);
     outline-offset: 2px;
   }
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
   body {
     background-color: var(--background);
     color: var(--foreground);
@@ -236,12 +241,10 @@
     border-bottom: 2px solid rgba(236, 224, 209, 0.25);
     border-radius: 0;
     box-shadow: none;
-  }
-
-  .content-section > * {
-    max-width: 56rem;
-    margin-left: auto;
-    margin-right: auto;
+    /* Allow flex row to constrain section height to 100vh; without this the
+       section grows to its content height and the row clips the overflow
+       (body has overflow:hidden) instead of letting overflow-y-auto scroll. */
+    min-height: 0;
   }
 
   .content-section-primary {
@@ -376,27 +379,99 @@
     opacity: 0.7;
     cursor: not-allowed;
   }
+
+  /* Unified dark glass card — used by every content section's primary
+     container so the theme reads as one continuous design. Replaces the
+     old cream `.glass-effect` look. */
+  .glass-card-dark {
+    border-radius: 1rem;
+    border: 1px solid rgba(150, 114, 89, 0.4);
+    background: linear-gradient(135deg, rgba(56, 34, 15, 0.85) 0%, rgba(99, 72, 50, 0.7) 50%, rgba(56, 34, 15, 0.9) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Smaller companion — used for compact sub-containers (form fields,
+     contact info, skill groups) so they share the same border language
+     without the heavy gradient. */
+  .glass-panel {
+    border-radius: 0.75rem;
+    border: 1px solid rgba(150, 114, 89, 0.3);
+    background-color: rgba(56, 34, 15, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Role / company chip — small uppercase tag with the accent border
+     treatment. Reused in experience cards, contact headers, etc. */
+  .role-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.625rem; /* 10px */
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #967259;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(150, 114, 89, 0.5);
+    background-color: rgba(236, 224, 209, 0.08);
+  }
+
+  /* Section divider line — horizontal rule with the same gradient the
+     section-title underlines use. */
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(150, 114, 89, 0.4), transparent);
+    border: 0;
+  }
 }
 
-/* Smooth scroll behavior */
-html {
-  scroll-behavior: smooth;
+/* Mobile-only refinements: slimmer glass card border, slightly stronger
+   section divider so the visual rhythm reads cleanly on a narrow screen. */
+@media (max-width: 767px) {
+  .glass-card-dark {
+    /* Keep 1px (sub-pixel renders blurry on most displays) but lower
+       opacity to "slim" the perceived thickness. */
+    border-color: rgba(150, 114, 89, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(150, 114, 89, 0.06);
+  }
+  .section-divider {
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(150, 114, 89, 0.55) 20%,
+      rgba(150, 114, 89, 0.55) 80%,
+      transparent 100%
+    );
+  }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
+/* Inner-panel scrollbar. Always slightly visible (thin thumb at base
+   opacity) so users notice when a content section extends below the fold. */
+.overflow-y-auto::-webkit-scrollbar {
   width: 8px;
 }
 
-::-webkit-scrollbar-track {
-  background: #ece0d1;
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: rgba(56, 34, 15, 0.15);
 }
 
-::-webkit-scrollbar-thumb {
-  background: #967259;
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: rgba(150, 114, 89, 0.55);
   border-radius: 4px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #634832;
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 114, 89, 0.85);
+  background-clip: padding-box;
 }
+
+/* Firefox: make the thin scrollbar use the same brown tint. */
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(150, 114, 89, 0.55) rgba(56, 34, 15, 0.15);
+}
+
