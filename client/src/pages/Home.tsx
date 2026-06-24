@@ -1,6 +1,34 @@
-import { useState, useEffect } from 'react';
-import { Mail, Github, Linkedin, FileText, Home as HomeIcon, Briefcase, User, Download, Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  type Transition,
+} from 'framer-motion';
+import {
+  Mail,
+  FileText,
+  Home as HomeIcon,
+  Briefcase,
+  User,
+} from 'lucide-react';
+import { useIsMobile } from '@/hooks/useMobile';
+import Hero from './hero';
+import Experience, { getWheelConsumer } from './experience';
+import AboutMe from './aboutme';
+import Resume from './resume';
+import ContactMe from './contactme';
+
+const SECTIONS = ['home', 'experience', 'about', 'resume', 'contact'] as const;
+type SectionId = (typeof SECTIONS)[number];
+
+const WHEEL_THRESHOLD = 70;
+const SWIPE_OFFSET_FRACTION = 0.2;
+const SWIPE_VELOCITY = 500;
+const NAV_WIDTH_DESKTOP = 80; // w-20 left rail
+const NAV_HEIGHT_MOBILE = 64; // h-16 bottom dock
+// How long goToIndex's reentry guard stays locked. Tuned to the snap duration.
+const ANIM_LOCK_MS = 600;
 
 /**
  * Design Philosophy: Minimalist Coffee Noir
@@ -9,46 +37,233 @@ import { Button } from '@/components/ui/button';
  * - Secondary accent: #38b6ff (cyan) for interactive states
  * - Glassmorphism cards with subtle blur and borders
  * - Left-side vertical navigation bar (fixed position)
- * - Smooth scroll behavior and fade-in animations
+ * - Horizontal swipe-right section transitions with parallax depth
  */
 
 export default function Home() {
-  const [activeSection, setActiveSection] = useState('home');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [viewportW, setViewportW] = useState(
+    typeof window === 'undefined' ? 1440 : window.innerWidth
+  );
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Tracks the last submit outcome so the contact form can show a
+  // success or error message inline. `'idle'` means no submission has
+  // happened (or the user has started typing again after a result).
+  const [submitStatus, setSubmitStatus] = useState<
+    'idle' | 'success' | 'error'
+  >('idle');
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const isMobile = useIsMobile();
+  const isAnimatingRef = useRef(false);
 
-  // Smooth scroll to section
+  const x = useMotionValue(-activeIndex * viewportW);
+
+  useEffect(() => {
+    const onResize = () => setViewportW(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  const goToIndex = useCallback(
+    (i: number) => {
+      if (isAnimatingRef.current) return;
+      const next = Math.max(0, Math.min(SECTIONS.length - 1, i));
+      if (next === activeIndex) return;
+      isAnimatingRef.current = true;
+      setActiveIndex(next);
+      window.setTimeout(() => {
+        isAnimatingRef.current = false;
+      }, ANIM_LOCK_MS);
+    },
+    [activeIndex]
+  );
+
   const scrollToSection = (sectionId: string) => {
-    setActiveSection(sectionId);
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    const i = SECTIONS.indexOf(sectionId as SectionId);
+    if (i >= 0) goToIndex(i);
+  };
+
+  // TEMP: ?section=<id> deep-link for screenshot verification. Remove after.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const target = params.get('section');
+    if (target) {
+      const i = SECTIONS.indexOf(target as SectionId);
+      if (i >= 0) {
+        const t = window.setTimeout(() => goToIndex(i), 100);
+        return () => window.clearTimeout(t);
+      }
+    }
+  }, []);
+
+  // Keep a ref of the latest activeIndex so the wheel listener (attached once)
+  // doesn't capture a stale closure.
+  const activeIndexRef = useRef(activeIndex);
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
+
+  // Wheel hijack (desktop)
+  useEffect(() => {
+    if (isMobile) return;
+    let acc = 0;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta =
+        e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      // If the active section has registered a wheel consumer (e.g. the
+      // Experience card), let it handle the wheel and skip the track
+      // advance. Falls back to section-track advance otherwise.
+      const consumer = getWheelConsumer();
+      if (consumer && consumer(delta)) {
+        return;
+      }
+      acc += delta;
+      if (Math.abs(acc) >= WHEEL_THRESHOLD) {
+        goToIndex(activeIndexRef.current + Math.sign(acc));
+        acc = 0;
+      }
+    };
+    window.addEventListener('wheel', onWheel, { passive: false });
+    return () => window.removeEventListener('wheel', onWheel);
+  }, [isMobile, goToIndex]);
+
+  // Manual touch-swipe handling for mobile. We previously used
+  // framer-motion's `drag` prop on the track, but it sets
+  // `touch-action: none` on the element, which blocks native
+  // vertical scrolling inside child sections — a real problem on
+  // the About page where the bio card + 15 skill chips together
+  // exceed 100vh on small phones. By listening to touch events
+  // passively (no preventDefault), we let the browser handle
+  // vertical scrolls natively and only act on horizontal swipes.
+  useEffect(() => {
+    if (!isMobile) return;
+
+    let startX = 0;
+    let startY = 0;
+    let startTime = 0;
+    let isHorizontal = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+      startTime = Date.now();
+      isHorizontal = false;
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const t = e.touches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      // Lock the gesture to horizontal once it clearly exceeds a
+      // horizontal-only motion. The 2× ratio biases strongly toward
+      // horizontal so a slight diagonal — say, scrolling vertically
+      // through the About section's bio + skills — isn't misread as
+      // a section-advance swipe.
+      if (!isHorizontal && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 2) {
+        isHorizontal = true;
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!isHorizontal) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dt = Math.max(1, Date.now() - startTime);
+      const velocity = Math.abs(dx) / dt; // px/ms — same scale as SWIPE_VELOCITY
+      const triggerOffset = viewportW * SWIPE_OFFSET_FRACTION;
+      if (dx > triggerOffset || velocity > SWIPE_VELOCITY) {
+        goToIndex(activeIndexRef.current - 1);
+      } else if (dx < -triggerOffset || velocity > SWIPE_VELOCITY) {
+        goToIndex(activeIndexRef.current + 1);
+      }
+      // If the gesture didn't reach the threshold, do nothing —
+      // the section stays put and the user can swipe again.
+    };
+
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [isMobile, goToIndex, viewportW]);
+
+  const totalWidth = viewportW * SECTIONS.length;
+  // Parallax: background drifts at 15% of row speed, foreground at -5% for depth.
+  const bgX = useTransform(x, [-totalWidth, 0], [totalWidth * 0.15, 0]);
+  const fgX = useTransform(x, [-totalWidth, 0], [-totalWidth * 0.05, 0]);
+
+  // How much horizontal space the nav takes out of the viewport. Mobile bottom
+  // dock doesn't reserve any width; desktop left rail takes 80px.
+  const navOffset = isMobile ? 0 : NAV_WIDTH_DESKTOP;
+  // Spring on mobile feels like a finger flick; tween on desktop matches wheel.
+  // Both are tuned to feel snappy (≤ 0.55s) so transitions read as motion
+  // rather than loading lag.
+  const rowTransition: Transition = isMobile
+    ? { type: 'spring', stiffness: 260, damping: 32, mass: 0.9 }
+    : { type: 'tween', ease: [0.22, 1, 0.36, 1], duration: 0.55 };
+
+  // Handle form submission — POSTs to the Vercel serverless function at
+  // /api/contact, which forwards the message to the portfolio owner's
+  // Gmail inbox via Nodemailer + Gmail SMTP.
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+    setSubmitError(null);
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data: { ok?: boolean; error?: string } = await res
+        .json()
+        .catch(() => ({}));
+
+      if (!res.ok) {
+        setSubmitStatus('error');
+        setSubmitError(data.error ?? 'Failed to send message');
+        return;
+      }
+      setSubmitStatus('success');
+      setFormData({ name: '', email: '', message: '' });
+    } catch (err) {
+      // Network error (offline, CORS, server unreachable).
+      setSubmitStatus('error');
+      setSubmitError('Network error — please try again');
+      console.error('contact: fetch failed', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Handle form submission
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setFormData({ name: '', email: '', message: '' });
-      alert('Message sent! Thank you for reaching out.');
-    }, 1500);
-  };
-
+  // Reset the success/error banner as soon as the user starts editing
+  // again — stale "message sent!" banners on top of new content look
+  // confusing.
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    if (submitStatus !== 'idle') {
+      setSubmitStatus('idle');
+      setSubmitError(null);
+    }
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const activeSection = SECTIONS[activeIndex];
+
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden">
-      {/* Left-side Vertical Navigation Bar */}
-      <nav className="fixed left-0 top-0 h-screen w-20 bg-[#38220f]/95 backdrop-blur-md border-r border-[#967259]/30 shadow-[4px_0_24px_rgba(0,0,0,0.35)] flex flex-col items-center justify-center gap-8 z-50">
-        {/* Navigation Items */}
+    <div className="h-screen w-screen bg-[#38220f] text-white overflow-hidden">
+      {/* Desktop: Left-side Vertical Navigation Bar */}
+      <nav className="fixed left-0 top-0 h-screen w-20 bg-[#38220f]/95 backdrop-blur-md border-r border-[#967259]/30 shadow-[4px_0_24px_rgba(0,0,0,0.35)] flex-col items-center justify-center gap-8 z-50 hidden md:flex">
         <button
           onClick={() => scrollToSection('home')}
           className={`nav-icon-btn ${activeSection === 'home' ? 'active' : ''}`}
@@ -56,7 +271,7 @@ export default function Home() {
         >
           <HomeIcon size={20} />
         </button>
-        
+
         <button
           onClick={() => scrollToSection('experience')}
           className={`nav-icon-btn ${activeSection === 'experience' ? 'active' : ''}`}
@@ -64,7 +279,7 @@ export default function Home() {
         >
           <Briefcase size={20} />
         </button>
-        
+
         <button
           onClick={() => scrollToSection('about')}
           className={`nav-icon-btn ${activeSection === 'about' ? 'active' : ''}`}
@@ -72,7 +287,7 @@ export default function Home() {
         >
           <User size={20} />
         </button>
-        
+
         <button
           onClick={() => scrollToSection('resume')}
           className={`nav-icon-btn ${activeSection === 'resume' ? 'active' : ''}`}
@@ -80,7 +295,7 @@ export default function Home() {
         >
           <FileText size={20} />
         </button>
-        
+
         <button
           onClick={() => scrollToSection('contact')}
           className={`nav-icon-btn ${activeSection === 'contact' ? 'active' : ''}`}
@@ -90,312 +305,107 @@ export default function Home() {
         </button>
       </nav>
 
-      {/* Main Content */}
-      <main className="ml-20 min-h-screen bg-[#38220f]">
-        {/* Hero Section */}
-        <section
-          id="home"
-          className="relative h-screen flex items-center justify-start px-8 md:px-16 overflow-hidden"
-          style={{  
-            background: 'linear-gradient(135deg, #ece0d1 0%, #dbc1ac 50%, #c9b5a0 100%)',
-          }}
+      {/* Mobile: Bottom Dock Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[#38220f]/95 backdrop-blur-md border-t border-[#967259]/30 shadow-[0_-4px_24px_rgba(0,0,0,0.35)] flex-row items-center justify-around z-50 flex md:hidden">
+        <button
+          onClick={() => scrollToSection('home')}
+          className={`nav-icon-btn ${activeSection === 'home' ? 'active' : ''}`}
+          title="Home"
         >
-          {/* Subtle overlay for depth */}
-          <div className="absolute inset-0 opacity-40" style={{ background: 'radial-gradient(circle at top right, rgba(99, 72, 50, 0.1), transparent)' }} />
-          
-          {/* Hero Content */}
-          <div className="relative z-10 max-w-2xl">
-            <h1 className="hero-text text-6xl md:text-7xl lg:text-8xl mb-6 leading-tight">
-              Hey, I'm<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-900 to-orange-700">
-                Benedict Abellana
-              </span>
-            </h1>
-            
-            <p className="text-xl md:text-2xl font-mono mb-8 font-light" style={{ color: '#634832' }}>
-              Front-End Developer who loves Coffee
-            </p>
-            
-            {/* Tech Stack Badges */}
-            <div className="flex flex-wrap gap-4 mb-12">
-              {[
-                { icon: '⚛️', label: 'React' },
-                { icon: '🎨', label: 'Tailwind' },
-                { icon: '📘', label: 'TypeScript' },
-                { icon: '🚀', label: 'Next.js' },
-                { icon: '🎭', label: 'Framer' },
-                { icon: '☕', label: 'Coffee' },
-              ].map((tech, idx) => (
-                <div
-                  key={idx}
-                  className="tech-badge"
-                  title={tech.label}
-                >
-                  <span className="text-2xl">{tech.icon}</span>
-                </div>
-              ))}
-            </div>
-            
-            {/* CTA Button */}
-            <Button
-              onClick={() => scrollToSection('contact')}
-              className="submit-btn w-auto px-8 py-3 inline-flex items-center justify-center"
-            >
-              Get In Touch
-            </Button>
-          </div>
-        </section>
+          <HomeIcon size={20} />
+        </button>
+
+        <button
+          onClick={() => scrollToSection('experience')}
+          className={`nav-icon-btn ${activeSection === 'experience' ? 'active' : ''}`}
+          title="Experience"
+        >
+          <Briefcase size={20} />
+        </button>
+
+        <button
+          onClick={() => scrollToSection('about')}
+          className={`nav-icon-btn ${activeSection === 'about' ? 'active' : ''}`}
+          title="About"
+        >
+          <User size={20} />
+        </button>
+
+        <button
+          onClick={() => scrollToSection('resume')}
+          className={`nav-icon-btn ${activeSection === 'resume' ? 'active' : ''}`}
+          title="Resume"
+        >
+          <FileText size={20} />
+        </button>
+
+        <button
+          onClick={() => scrollToSection('contact')}
+          className={`nav-icon-btn ${activeSection === 'contact' ? 'active' : ''}`}
+          title="Contact"
+        >
+          <Mail size={20} />
+        </button>
+      </nav>
+
+      {/* Horizontal Track */}
+      <motion.div
+        className="flex flex-row h-full"
+        style={{
+          width: totalWidth,
+          x,
+          marginLeft: navOffset,
+          // `touch-action: pan-y` lets the browser handle vertical
+          // scrolls natively inside child sections (e.g. the About
+          // page's bio + skills column on mobile). Only horizontal
+          // swipes are routed to our manual touch handler above.
+          // We previously used framer-motion's `drag` prop here, but
+          // it set `touch-action: none` which blocked native vertical
+          // scrolling.
+          touchAction: 'pan-y',
+        }}
+        animate={{ x: -activeIndex * viewportW }}
+        transition={rowTransition}
+      >
+        {/* Hero Section */}
+        <Hero
+          viewportW={viewportW}
+          totalWidth={totalWidth}
+          bgX={bgX}
+          fgX={fgX}
+          onCtaClick={() => scrollToSection('contact')}
+          isMobile={isMobile}
+          isActive={activeSection === 'home'}
+        />
 
         {/* Experience Section */}
-        <section id="experience" className="content-section content-section-primary py-24 px-8 md:px-16">
-          <h2 className="section-title section-title-experience">Experience</h2>
-          
-          <div className="space-y-8">
-            {/* Experience Card 1 */}
-            <div className="experience-card">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4">
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-1">Internship</h3>
-                  <p className="font-semibold" style={{ color: '#38220f' }}>Techflow.AI</p>
-                </div>
-                <p className="text-sm md:text-right mt-2 md:mt-0 text-white">February 2026 - Present</p>
-              </div>
-              <ul className="space-y-2 text-gray-300 text-sm md:text-base">
-                <li className="flex items-start gap-3">
-                  <span className="mt-1" style={{ color: '#38220f' }}>▸</span>
-                  <span>Built multiple automations for clients to make business process faster and easier</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1" style={{ color: '#38220f' }}>▸</span>
-                  <span>Collaborated with team members to deliver high-quality automations</span>
-                </li>
-                {/* <li className="flex items-start gap-3">
-                  <span className="mt-1" style={{ color: '#38220f' }}>▸</span>
-                  <span>Earned Smarts</span>
-                </li> */}
-              </ul>
-            </div>
-
-            {/* Experience Card 2 */}
-            {/* <div className="experience-card">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4">
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-1">Frontend Developer</h3>
-                  <p className="font-semibold" style={{ color: '#38220f' }}>Digital Solutions Co.</p>
-                </div>
-                <p className="text-sm md:text-right mt-2 md:mt-0 text-white">2020 - 2022</p>
-              </div>
-              <ul className="space-y-2 text-gray-300 text-sm md:text-base">
-                <li className="flex items-start gap-3">
-                  <span className="mt-1" style={{ color: '#38220f' }}>▸</span>
-                  <span>Built interactive dashboards and data visualization components</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1" style={{ color: '#38220f' }}>▸</span>
-                  <span>Collaborated with UX/UI designers to implement pixel-perfect designs</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1" style={{ color: '#38220f' }}>▸</span>
-                  <span>Mentored junior developers and established coding standards</span>
-                </li>
-              </ul>x
-            </div> */}
-
-            {/* Experience Card 3 */}
-            {/* <div className="experience-card">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between mb-4">
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-1">Junior Frontend Developer</h3>
-                  <p className="font-semibold" style={{ color: '#38220f' }}>StartUp Ventures</p>
-                </div>
-                <p className="text-sm md:text-right mt-2 md:mt-0 text-white">2019 - 2020</p>
-              </div>
-              <ul className="space-y-2 text-gray-300 text-sm md:text-base">
-                <li className="flex items-start gap-3">
-                  <span className="mt-1" style={{ color: '#38220f' }}>▸</span>
-                  <span>Developed responsive web pages using HTML, CSS, and vanilla JavaScript</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1" style={{ color: '#38220f' }}>▸</span>
-                  <span>Implemented bug fixes and performance improvements</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="mt-1" style={{ color: '#38220f' }}>▸</span>
-                  <span>Participated in code reviews and learned best practices</span>
-                </li>
-              </ul>
-            </div>*/}
-          </div> 
-        </section>
+        <Experience
+          viewportW={viewportW}
+          isActive={activeSection === 'experience'}
+          onAdvanceSection={() => goToIndex(SECTIONS.indexOf('about'))}
+          onRetreatSection={() => goToIndex(SECTIONS.indexOf('home'))}
+        />
 
         {/* About Section */}
-        <section id="about" className="content-section content-section-secondary py-24 px-8 md:px-16">
-          <h2 className="section-title section-title-about">About Me</h2>
-          
-          <div className="glass-effect p-8 md:p-12 mb-12">
-            <p className="text-lg text-gray-300 leading-relaxed mb-6">
-              I'm a Computer Engineering Graduate in the University of San Carlos who is passionate about frontend development and aspire to be a skilled developer with a deep love for creating beautiful, functional web experiences. I've still working with startups and established companies to build products that users love.
-            </p>
-            <p className="text-lg text-gray-300 leading-relaxed">
-              When I'm not working, you'll find me playing video games or exploring new coffee shops, contributing to our side projects, or experimenting with the latest web technologies. I believe in our teams power of creating clean code, aesthetic design, and continuous learning.
-            </p>
-          </div>
-
-          {/* Skills */}
-          <h3 className="text-2xl font-bold text-white mb-6">Skills & Technologies</h3>
-          <div className="flex flex-wrap gap-3">
-            {[
-              'React', 'TypeScript', 'Tailwind CSS', 'Next.js', 'Framer Motion',
-              'JavaScript', 'HTML/CSS', 'Responsive Design', 'UI/UX', 'Git',
-              'REST APIs', 'GraphQL', 'Web Performance', 'Accessibility', 'Testing'
-            ].map((skill, idx) => (
-              <span key={idx} className="skill-tag">
-                {skill}
-              </span>
-            ))}
-          </div>
-        </section>
+        <AboutMe viewportW={viewportW} isActive={activeSection === 'about'} />
 
         {/* Resume Section */}
-        <section id="resume" className="content-section content-section-primary py-24 px-8 md:px-16">
-          <h2 className="section-title section-title-resume">Resume</h2>
-          
-          <div className="glass-effect p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div>
-              <h3 className="text-2xl font-bold text-white mb-3">My Resume</h3>
-              <p className="text-gray-300 mb-6">
-                Download my full resume to see a overview of my experience, education, and technical skills.
-              </p>
-              <a
-                href="/Benedict_Resume.pdf"
-                download="Benedict_Abellana_Resume.pdf"
-                className="submit-btn w-auto inline-flex items-center gap-2 px-6 py-3"
-              >
-                <Download size={18} />
-                Download Resume
-              </a>
-            </div>
-            
-            {/* Resume PDF Preview */}
-            <div className="w-full md:w-72 h-80 overflow-hidden rounded-lg border border-white/10 bg-white shadow-lg">
-              <iframe
-                src="/Benedict_Resume.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
-                title="Benedict Resume Preview"
-                className="h-full w-full"
-              />
-            </div>
-          </div>
-        </section>
+        <Resume viewportW={viewportW} isActive={activeSection === 'resume'} />
 
         {/* Contact Section */}
-        <section id="contact" className="content-section content-section-secondary py-24 px-8 md:px-16">
-          <h2 className="section-title section-title-contact">Get In Touch</h2>
-          
-          <div className="grid md:grid-cols-2 gap-12">
-            {/* Contact Info */}
-            <div>
-              <h3 className="text-2xl font-bold text-white mb-6">Let's Connect</h3>
-              <p className="text-gray-300 mb-8 leading-relaxed">
-                I'm always interested in hearing about new projects and opportunities. Feel free to reach out if you'd like to collaborate or just chat about coffee and life!
-              </p>
-              
-              {/* Social Links */}
-              <div className="space-y-4">
-                <a
-                  href="mailto:hello@benedictabellana.dev"
-                  className="flex items-center gap-3 text-gray-300 hover:text-cyan-400 transition-colors duration-300"
-                >
-                  <Mail size={20} />
-                  <span>abellanabenedict@gmail.com</span>
-                </a>
-                <a
-                  href="https://github.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-gray-300 hover:text-cyan-400 transition-colors duration-300"
-                >
-                  <Github size={20} />
-                  <span>https://github.com/coffeebdict</span>
-                </a>
-                <a
-                  href="https://linkedin.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-gray-300 hover:text-cyan-400 transition-colors duration-300"
-                >
-                  <Linkedin size={20} />
-                  <span>https://www.linkedin.com/in/benedict-abellana-b277571b2/</span>
-                </a>
-              </div>
-            </div>
-
-            {/* Contact Form */}
-            <form onSubmit={handleFormSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Your Name"
-                  required
-                  className="contact-input"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="your@email.com"
-                  required
-                  className="contact-input"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Message</label>
-                <textarea
-                  name="message"
-                  value={formData.message}
-                  onChange={handleInputChange}
-                  placeholder="Your message here..."
-                  required
-                  rows={5}
-                  className="contact-input resize-none"
-                />
-              </div>
-              
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="submit-btn flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <span className="animate-spin">⏳</span>
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Send size={18} />
-                    Send Message
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="py-12 px-8 md:px-16 border-t border-white/5 text-center text-gray-500">
-          <p>© 2026 Benedict Abellana. Built with React, Tailwind CSS, and ☕ Coffee.</p>
-        </footer>
-      </main>
+        <ContactMe
+          viewportW={viewportW}
+          isMobile={isMobile}
+          formData={formData}
+          isSubmitting={isSubmitting}
+          onSubmit={handleFormSubmit}
+          onInputChange={handleInputChange}
+          footerBottomPadding={NAV_HEIGHT_MOBILE}
+          isActive={activeSection === 'contact'}
+          submitStatus={submitStatus}
+          submitError={submitError}
+        />
+      </motion.div>
     </div>
   );
 }
