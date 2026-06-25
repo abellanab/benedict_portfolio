@@ -63,7 +63,9 @@ const ROLES: Role[] = [
       {
         subtitle: 'Openclaw Agent',
         bullets: [
-          'Placeholder — add your agent description here. Edit the ROLES array in client/src/pages/experience.tsx to fill in the bullets, link, and additional agents.',
+          'Prompt Master — Designed and implemented a prompt-engineering framework that enables AI to transform users prompts using the best prompting structure resulting the best output.',
+          'Project Manager  — Created a project management agent that turns vague automation ideas into implementation-ready blueprints for tools like n8n, Make.com, and Zapier.', 
+          'UI UX Designer — Built to focus on user experience, creating intuitive, accessible, and aesthetically pleasing user interfaces',
         ],
       },
     ],
