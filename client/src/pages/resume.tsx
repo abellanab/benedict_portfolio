@@ -49,8 +49,8 @@ export default function Resume({ viewportW, isActive }: ResumeProps) {
             Download Resume
           </a>
 
-          {/* Resume PDF Preview — responsive width/height via aspect ratio */}
-          <div className="w-full max-w-[260px] sm:max-w-xs aspect-[3/4] overflow-hidden rounded-xl border border-[#967259]/40 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.45)]">
+          {/* Resume PDF Preview — scales with available space and caps height */}
+          <div className="resume-preview">
             <iframe
               src={`${RESUME_URL}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
               title="Benedict Resume Preview"

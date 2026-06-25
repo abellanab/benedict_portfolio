@@ -25,8 +25,6 @@ type SectionId = (typeof SECTIONS)[number];
 const WHEEL_THRESHOLD = 70;
 const SWIPE_OFFSET_FRACTION = 0.2;
 const SWIPE_VELOCITY = 500;
-const NAV_WIDTH_DESKTOP = 80; // w-20 left rail
-const NAV_HEIGHT_MOBILE = 64; // h-16 bottom dock
 // How long goToIndex's reentry guard stays locked. Tuned to the snap duration.
 const ANIM_LOCK_MS = 600;
 
@@ -45,11 +43,9 @@ export default function Home() {
   const trackContainerRef = useRef<HTMLDivElement>(null);
   const [viewportW, setViewportW] = useState(() => {
     if (typeof window === 'undefined') return 1440;
-    // Initial estimate: desktop left rail is reserved, mobile dock reserves
-    // no width. The real value is measured from the track container after
-    // mount so it reflects the actual content area.
-    const navOffset = window.innerWidth < 768 ? 0 : NAV_WIDTH_DESKTOP;
-    return window.innerWidth - navOffset;
+    // Initial estimate; the real content area is measured from the track
+    // container after mount (ResizeObserver + window/visualViewport resize).
+    return window.innerWidth;
   });
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,17 +62,31 @@ export default function Home() {
   const x = useMotionValue(-activeIndex * viewportW);
 
   // Measure the actual track container width so viewportW is the content
-  // area (viewport minus the desktop left rail and any scrollbar). Resize
-  // re-measures; the nav width is handled by CSS (md:ml-20) so the ref
-  // clientWidth already excludes it.
+  // area (viewport minus the desktop left rail and any scrollbar). Resize,
+  // zoom, and virtual-keyboard changes all re-measure. The nav width is
+  // handled by CSS (nav-offset) so the ref clientWidth already excludes it.
   useEffect(() => {
     const measure = () => {
-      if (!trackContainerRef.current) return;
-      setViewportW(trackContainerRef.current.clientWidth);
+      const width = trackContainerRef.current?.clientWidth;
+      setViewportW(width ?? window.innerWidth);
     };
     measure();
+
+    const ro = new ResizeObserver(measure);
+    if (trackContainerRef.current) ro.observe(trackContainerRef.current);
+
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', measure);
+    }
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', measure);
+      }
+    };
   }, []);
 
   const goToIndex = useCallback(
@@ -274,7 +284,7 @@ export default function Home() {
   return (
     <div className="h-[var(--viewport-h)] w-screen bg-[#38220f] text-white overflow-hidden">
       {/* Desktop: Left-side Vertical Navigation Bar */}
-      <nav className="fixed left-0 top-0 h-[var(--viewport-h)] w-20 bg-[#38220f]/95 backdrop-blur-md border-r border-[#967259]/30 shadow-[4px_0_24px_rgba(0,0,0,0.35)] flex-col items-center justify-center gap-8 z-50 hidden md:flex">
+      <nav className="fixed left-0 top-0 h-[var(--viewport-h)] nav-rail bg-[#38220f]/95 backdrop-blur-md border-r border-[#967259]/30 shadow-[4px_0_24px_rgba(0,0,0,0.35)] flex-col items-center justify-center gap-8 z-50 hidden md:flex">
         <button
           onClick={() => scrollToSection('home')}
           className={`nav-icon-btn ${activeSection === 'home' ? 'active' : ''}`}
@@ -317,7 +327,7 @@ export default function Home() {
       </nav>
 
       {/* Mobile: Bottom Dock Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 h-[calc(64px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-[#38220f]/95 backdrop-blur-md border-t border-[#967259]/30 shadow-[0_-4px_24px_rgba(0,0,0,0.35)] flex-row items-center justify-around z-50 flex md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 mobile-dock bg-[#38220f]/95 backdrop-blur-md border-t border-[#967259]/30 shadow-[0_-4px_24px_rgba(0,0,0,0.35)] flex-row items-center justify-around z-50 flex md:hidden">
         <button
           onClick={() => scrollToSection('home')}
           className={`nav-icon-btn ${activeSection === 'home' ? 'active' : ''}`}
@@ -362,7 +372,7 @@ export default function Home() {
       {/* Horizontal Track */}
       <div
         ref={trackContainerRef}
-        className="h-full min-w-0 min-h-0 overflow-hidden ml-0 md:ml-20"
+        className="h-full min-w-0 min-h-0 overflow-hidden nav-offset track-offset"
       >
         <motion.div
           className="flex flex-row h-full min-w-0 min-h-0"
@@ -373,9 +383,6 @@ export default function Home() {
             // scrolls natively inside child sections (e.g. the About
             // page's bio + skills column on mobile). Only horizontal
             // swipes are routed to our manual touch handler above.
-            // We previously used framer-motion's `drag` prop here, but
-            // it set `touch-action: none` which blocked native vertical
-            // scrolling.
             touchAction: 'pan-y',
           }}
           animate={{ x: -activeIndex * viewportW }}
@@ -413,7 +420,7 @@ export default function Home() {
           isSubmitting={isSubmitting}
           onSubmit={handleFormSubmit}
           onInputChange={handleInputChange}
-          footerBottomPadding={NAV_HEIGHT_MOBILE}
+          footerBottomPadding={0}
           isActive={activeSection === 'contact'}
           submitStatus={submitStatus}
           submitError={submitError}

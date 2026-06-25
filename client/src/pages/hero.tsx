@@ -66,11 +66,11 @@ export default function Hero({ viewportW, totalWidth, bgX, fgX, onCtaClick, isAc
 
       {/* Hero Content */}
       <motion.div
-        className="relative z-10 w-full min-w-0 max-w-2xl"
+        className="relative z-10 hero-content min-w-0"
         style={{ x: fgX }}
       >
         <motion.h1
-          className="hero-text text-[clamp(1.75rem,7vw,5rem)] md:text-[clamp(2.5rem,6vw,5rem)] mb-4 md:mb-6 leading-tight break-words"
+          className="hero-text text-[clamp(1.75rem,6vw,4.5rem)] mb-4 md:mb-6 leading-tight"
           style={{
             x: headlineX,
             y: headlineY,

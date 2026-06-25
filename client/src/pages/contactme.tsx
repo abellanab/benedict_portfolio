@@ -8,7 +8,7 @@ interface ContactMeProps {
   isSubmitting: boolean;
   onSubmit: (e: React.FormEvent) => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  footerBottomPadding: number; // px — clears the mobile bottom dock
+  footerBottomPadding: number; // extra footer bottom padding in px; mobile also adds env(safe-area-inset-bottom)
   isActive?: boolean;
   // `'success'` / `'error'` show an inline banner above the submit
   // button. The banner clears automatically when the user starts
@@ -67,7 +67,7 @@ export default function ContactMe({
       <h2 className="section-title section-title-contact">Get In Touch</h2>
 
       <div className="glass-card-dark p-5 sm:p-7 md:p-10">
-        <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+        <div className="contact-grid">
           {/* Contact Info */}
           <div className="min-w-0">
             <span className="role-chip mb-4">Connect</span>

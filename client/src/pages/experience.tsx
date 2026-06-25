@@ -7,8 +7,6 @@ import type { Swiper as SwiperInstance } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/effect-flip';
 
-import { useIsMobile } from '@/hooks/useMobile';
-
 interface ExperienceProps {
   viewportW: number;
   isActive: boolean;
@@ -120,7 +118,7 @@ const WHEEL_DEBOUNCE_MS = 250;
 function ActiveCardContent({ role }: { role: Role }) {
   return (
     <div
-      className={`glass-card-dark w-full h-full flex flex-col overflow-hidden p-4 sm:p-6 md:p-8 lg:p-9`}
+      className="glass-card-dark experience-content w-full h-full flex flex-col overflow-hidden"
     >
       <header className="shrink-0 mb-3 md:mb-5">
         <span className="role-chip mb-2 md:mb-3">{role.company}</span>
@@ -190,7 +188,6 @@ export default function Experience({
   onAdvanceSection,
   onRetreatSection,
 }: ExperienceProps) {
-  const isMobile = useIsMobile();
   const swiperRef = useRef<SwiperInstance | null>(null);
   const lastWheelAtRef = useRef(0);
   const onAdvanceRef = useRef(onAdvanceSection);
@@ -293,14 +290,6 @@ export default function Experience({
     navigate(direction, 'loop');
   };
 
-  // Card width: scales with the viewport while preserving the flip
-  // animation's aspect ratio. The card's height is driven by the
-  // available section space (flex-1 wrapper) and capped so it never
-  // grows unwieldy on tall displays.
-  const cardWidth = isMobile
-    ? 'min(88vw, 360px)'
-    : 'clamp(720px, 50vw, 820px)';
-
   return (
     <motion.section
       id="experience"
@@ -392,10 +381,7 @@ export default function Experience({
                 onClick={handleCardTap}
                 // Tap/click target uses cursor-pointer so users get a hint
                 // that the card is interactive on both mobile and desktop.
-                className="cursor-pointer select-none h-full max-h-[560px] md:max-h-[620px]"
-                style={{
-                  width: cardWidth,
-                }}
+                className="cursor-pointer select-none h-full experience-card-frame"
               >
                 <ActiveCardContent role={role} />
               </div>

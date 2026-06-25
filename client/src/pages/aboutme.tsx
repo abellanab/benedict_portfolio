@@ -103,15 +103,14 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
           </div>
         </div>
       ) : (
-        // Desktop: two-column layout.
-        // A 40/60 split gives the image prominence while leaving ample room
-        // for the bio and skills. The columns align to a shared top edge,
-        // and the image height naturally matches the right-hand content.
+        // Desktop: adaptive two-column layout.
+        // The grid collapses to a single column on short viewports so nothing
+        // is clipped, while mid-size laptops get a balanced image/text ratio.
         <div className="flex-1 flex flex-col justify-center min-h-0 max-w-6xl mx-auto w-full">
-          <div className="grid grid-cols-[minmax(220px,2fr)_minmax(320px,3fr)] gap-8 lg:gap-12 items-start">
+          <div className="about-grid">
             {/* Left column: profile image */}
             <div className="glass-card-dark p-2 h-full">
-              <div className="relative w-full h-full min-h-[260px] rounded-lg overflow-hidden border border-[#967259]/40 shadow-[inset_0_0_40px_rgba(0,0,0,0.25)]">
+              <div className="about-image">
                 <img
                   src={PROFILE_IMAGE}
                   alt="Benedict Abellana"
@@ -120,9 +119,9 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
               </div>
             </div>
 
-            {/* Right column: bio + skills, shifted slightly right by the grid gap */}
+            {/* Right column: bio + skills */}
             <div className="flex flex-col justify-center space-y-6 h-full">
-              <div className="glass-card-dark p-5 md:p-7 lg:p-9">
+              <div className="glass-card-dark about-bio">
                 <div className="space-y-5 text-base md:text-lg text-gray-200 leading-relaxed text-center md:text-left">
                   <p>
                     I am Benedict Abellana, a Computer Engineering student at the University of San Carlos
