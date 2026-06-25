@@ -55,7 +55,7 @@ export default function ContactMe({
   return (
     <motion.section
       id="contact"
-      className="content-section content-section-secondary py-10 md:py-16 px-4 md:px-20 lg:px-28 overflow-y-auto"
+      className="content-section content-section-secondary py-10 md:py-16 px-4 md:px-20 lg:px-28 overflow-y-auto min-h-0"
       style={{ width: viewportW, flexShrink: 0 }}
       // Per-section content entry: fade in with a small upward translate
       // when this panel becomes the active one. 0.1s delay lets the
@@ -66,12 +66,12 @@ export default function ContactMe({
     >
       <h2 className="section-title section-title-contact">Get In Touch</h2>
 
-      <div className="glass-card-dark p-7 md:p-10">
-        <div className="grid md:grid-cols-2 gap-10">
+      <div className="glass-card-dark p-5 sm:p-7 md:p-10">
+        <div className="grid md:grid-cols-2 gap-8 md:gap-10">
           {/* Contact Info */}
-          <div>
+          <div className="min-w-0">
             <span className="role-chip mb-4">Connect</span>
-            <h3 className="text-2xl font-bold text-white mt-4 mb-3">Let's Connect</h3>
+            <h3 className="text-xl sm:text-2xl font-bold text-white mt-4 mb-3">Let's Connect</h3>
             <p className="text-gray-200 mb-7 leading-relaxed">
               I'm always interested in hearing about new projects and opportunities.
               Feel free to reach out if you'd like to collaborate or just chat about
@@ -99,9 +99,9 @@ export default function ContactMe({
           </div>
 
           {/* Contact Form */}
-          <form onSubmit={onSubmit} className="space-y-5">
+          <form onSubmit={onSubmit} className="space-y-5 min-w-0">
             <span className="role-chip">Message</span>
-            <h3 className="text-2xl font-bold text-white mt-4">Send a Message</h3>
+            <h3 className="text-xl sm:text-2xl font-bold text-white mt-4">Send a Message</h3>
 
             <div className="space-y-5">
               <div>
@@ -198,7 +198,11 @@ export default function ContactMe({
 
       <div
         className="mt-10 pt-6 border-t border-[#967259]/20 text-center text-gray-400"
-        style={{ paddingBottom: isMobile ? footerBottomPadding : undefined }}
+        style={{
+          paddingBottom: isMobile
+            ? `calc(${footerBottomPadding}px + env(safe-area-inset-bottom))`
+            : undefined,
+        }}
       >
         <p>© 2026 Benedict Abellana. Built with React, Tailwind CSS, and ☕ Coffee.</p>
       </div>

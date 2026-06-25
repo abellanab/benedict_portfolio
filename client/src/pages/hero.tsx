@@ -7,7 +7,6 @@ interface HeroProps {
   bgX: MotionValue<number>;
   fgX: MotionValue<number>;
   onCtaClick: () => void;
-  isMobile: boolean;
   isActive?: boolean;
 }
 
@@ -24,7 +23,7 @@ const TECH_BADGES = [
  * Hero / landing section. First panel in the horizontal track.
  * Carries the only parallax background overlay in the app.
  */
-export default function Hero({ viewportW, totalWidth, bgX, fgX, onCtaClick, isMobile, isActive }: HeroProps) {
+export default function Hero({ viewportW, totalWidth, bgX, fgX, onCtaClick, isActive }: HeroProps) {
   // Headline reacts to track x: drifts -8% (layered on parent -5%),
   // lifts -16px, fades to 85%, and blurs up to 4px as it leaves view.
   const headlineX = useTransform(fgX, [-totalWidth, 0], [totalWidth * 0.08, 0]);
@@ -35,7 +34,7 @@ export default function Hero({ viewportW, totalWidth, bgX, fgX, onCtaClick, isMo
 
   return (
     <motion.section
-      className="relative h-full flex items-center justify-start px-5 md:px-20 lg:px-28 overflow-hidden"
+      className="relative h-full flex items-center justify-start px-4 sm:px-5 md:px-20 lg:px-28 overflow-y-auto"
       style={{ width: viewportW, flexShrink: 0 }}
       // Per-section content entry animation: when this section becomes
       // active, fade the whole hero in with a small upward translate.
@@ -67,11 +66,11 @@ export default function Hero({ viewportW, totalWidth, bgX, fgX, onCtaClick, isMo
 
       {/* Hero Content */}
       <motion.div
-        className="relative z-10 w-full max-w-2xl"
+        className="relative z-10 w-full min-w-0 max-w-2xl"
         style={{ x: fgX }}
       >
         <motion.h1
-          className="hero-text text-4xl sm:text-5xl md:text-7xl lg:text-8xl mb-4 md:mb-6 leading-tight"
+          className="hero-text text-[clamp(1.75rem,7vw,5rem)] md:text-[clamp(2.5rem,6vw,5rem)] mb-4 md:mb-6 leading-tight break-words"
           style={{
             x: headlineX,
             y: headlineY,
@@ -86,21 +85,21 @@ export default function Hero({ viewportW, totalWidth, bgX, fgX, onCtaClick, isMo
         </motion.h1>
 
         <p
-          className="text-base sm:text-lg md:text-2xl font-mono mb-6 md:mb-8 font-light"
+          className="text-[clamp(0.875rem,2.2vw,1.5rem)] font-mono mb-6 md:mb-8 font-light break-words"
           style={{ color: '#634832' }}
         >
           AI Engineer | Frontend Developer | Coffee Enthusiast | Prompt Engineer
         </p>
 
         {/* Tech Stack Badges */}
-        <div className="flex flex-wrap gap-3 md:gap-4 mb-8 md:mb-12">
+        <div className="flex flex-wrap gap-2.5 sm:gap-3 md:gap-4 mb-8 md:mb-12">
           {TECH_BADGES.map((tech, idx) => (
             <div
               key={idx}
-              className={`tech-badge ${isMobile ? 'w-12 h-12' : ''}`}
+              className="tech-badge"
               title={tech.label}
             >
-              <span className={`${isMobile ? 'text-xl' : 'text-2xl'}`}>{tech.icon}</span>
+              <span>{tech.icon}</span>
             </div>
           ))}
         </div>

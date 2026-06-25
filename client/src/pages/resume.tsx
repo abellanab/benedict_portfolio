@@ -18,7 +18,7 @@ export default function Resume({ viewportW, isActive }: ResumeProps) {
   return (
     <motion.section
       id="resume"
-      className="content-section content-section-primary py-10 md:py-16 px-4 md:px-20 lg:px-28 overflow-y-auto"
+      className="content-section content-section-primary py-10 md:py-16 px-4 md:px-20 lg:px-28 overflow-y-auto min-h-0"
       style={{ width: viewportW, flexShrink: 0 }}
       // Per-section content entry: fade in with a small upward translate
       // when this panel becomes the active one. 0.1s delay lets the
@@ -29,10 +29,10 @@ export default function Resume({ viewportW, isActive }: ResumeProps) {
     >
       <h2 className="section-title section-title-resume">Resume</h2>
 
-      <div className="max-w-3xl mx-auto flex flex-col items-center gap-6">
-        <div className="glass-card-dark p-7 md:p-10 w-full flex flex-col items-center text-center gap-6">
+      <div className="max-w-3xl mx-auto w-full flex flex-col items-center gap-6 min-h-0">
+        <div className="glass-card-dark p-5 sm:p-7 md:p-10 w-full flex flex-col items-center text-center gap-6">
           <span className="role-chip">Document</span>
-          <h3 className="text-2xl md:text-3xl font-bold text-white">
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
             My Resume
           </h3>
           <p className="text-gray-200 leading-relaxed max-w-xl">
@@ -43,14 +43,14 @@ export default function Resume({ viewportW, isActive }: ResumeProps) {
           <a
             href={RESUME_URL}
             download={RESUME_FILENAME}
-            className="submit-btn w-auto inline-flex items-center gap-2 px-6 py-3"
+            className="submit-btn w-auto inline-flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3"
           >
             <Download size={18} />
             Download Resume
           </a>
 
-          {/* Resume PDF Preview */}
-          <div className="w-full md:w-72 h-80 overflow-hidden rounded-xl border border-[#967259]/40 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.45)]">
+          {/* Resume PDF Preview — responsive width/height via aspect ratio */}
+          <div className="w-full max-w-[260px] sm:max-w-xs aspect-[3/4] overflow-hidden rounded-xl border border-[#967259]/40 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.45)]">
             <iframe
               src={`${RESUME_URL}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
               title="Benedict Resume Preview"
