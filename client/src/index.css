@@ -519,19 +519,19 @@
   .about-grid {
     display: grid;
     gap: clamp(1rem, 2vw, 1.5rem);
-    align-items: start;
+    align-items: stretch;
   }
 
   @media (min-width: 1280px) and (min-height: 701px) {
     .about-grid {
-      grid-template-columns: minmax(220px, 1fr) minmax(320px, 1.75fr);
+      grid-template-columns: minmax(240px, 0.85fr) minmax(320px, 1.35fr);
     }
   }
 
   @media (min-width: 1536px) and (min-height: 701px) {
     .about-grid {
-      grid-template-columns: minmax(240px, 1fr) minmax(360px, 1.5fr);
-      gap: clamp(1.5rem, 3vw, 3rem);
+      grid-template-columns: minmax(260px, 0.8fr) minmax(360px, 1.3fr);
+      gap: clamp(1.5rem, 3vw, 2rem);
     }
   }
 
@@ -546,7 +546,7 @@
   }
 
   .about-bio {
-    padding: clamp(1rem, 2vw, 2.25rem);
+    padding: clamp(1rem, 1.75vw, 1.75rem);
   }
 
   .resume-preview {

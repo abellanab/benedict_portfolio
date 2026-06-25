@@ -32,14 +32,14 @@ const PROFILE_IMAGE = '/profile.jpg';
  * About section. Third panel in the horizontal track.
  *
  * UX layout:
- *   - Desktop: two-column split. A rounded, bordered profile image sits on
- *     the left, occupying roughly 40% of the content width. The bio card and
- *     skills sit on the right, slightly shifted inward to create breathing
- *     room. The image is allowed to grow vertically to match the combined
- *     height of the right-hand content block, while staying capped so it
- *     never exceeds the section's available space.
- *   - Mobile: image appears as a centered circular avatar above the bio, so
- *     the section remains vertically scrollable and nothing is clipped.
+ *   - Desktop: a balanced two-column composition. The left column is a
+ *     rounded portrait photo. The right column is a single glass card
+ *     containing the bio and the skills chips. The left image stretches to
+ *     match the right card's total height so the columns align cleanly
+ *     at top and bottom. On short viewports the layout drops to a single
+ *     vertical stack.
+ *   - Mobile: circular avatar above a stacked bio and skills, vertically
+ *     scrollable.
  */
 export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
   const isMobile = useIsMobile();
@@ -103,12 +103,10 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
           </div>
         </div>
       ) : (
-        // Desktop: adaptive two-column layout.
-        // The grid collapses to a single column on short viewports so nothing
-        // is clipped, while mid-size laptops get a balanced image/text ratio.
+        // Desktop: two-column layout where the image matches the right card height.
         <div className="flex-1 flex flex-col justify-center min-h-0 max-w-6xl mx-auto w-full">
-          <div className="about-grid">
-            {/* Left column: profile image */}
+          <div className="about-grid items-stretch">
+            {/* Left column: portrait image */}
             <div className="glass-card-dark p-2 h-full">
               <div className="about-image">
                 <img
@@ -119,33 +117,31 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
               </div>
             </div>
 
-            {/* Right column: bio + skills */}
-            <div className="flex flex-col justify-center space-y-6 h-full">
-              <div className="glass-card-dark about-bio">
-                <div className="space-y-5 text-base md:text-lg text-gray-200 leading-relaxed text-center md:text-left">
-                  <p>
-                    I am Benedict Abellana, a Computer Engineering student at the University of San Carlos
-                    who is passionate about frontend development and aspire to be a skilled developer
-                    with a deep love for creating beautiful, functional web experiences. I also love creating AI agents and automating workflows to make life easier.
-                    As of now, I spend most of my free time working my own startups building products that users will love.
-                  </p>
-                  <p>
-                    During weekends, you'll find me playing video games or exploring new
-                    coffee shops together with my siblings or friends, contributing to our side projects, or experimenting with the
-                    latest web technologies. I believe in the power of collaboration and continuous learning, and I am always eager to take on new challenges that push me to grow as a developer and as a person.
-                  </p>
-                </div>
+            {/* Right column: bio + skills unified inside one glass card */}
+            <div className="glass-card-dark about-bio flex flex-col justify-between h-full">
+              <div className="space-y-5 text-base md:text-lg text-gray-200 leading-relaxed text-center md:text-left">
+                <p>
+                  I am Benedict Abellana, a Computer Engineering student at the University of San Carlos
+                  who is passionate about frontend development and aspire to be a skilled developer
+                  with a deep love for creating beautiful, functional web experiences. I also love creating AI agents and automating workflows to make life easier.
+                  As of now, I spend most of my free time working my own startups building products that users will love.
+                </p>
+                <p>
+                  During weekends, you'll find me playing video games or exploring new
+                  coffee shops together with my siblings or friends, contributing to our side projects, or experimenting with the
+                  latest web technologies. I believe in the power of collaboration and continuous learning, and I am always eager to take on new challenges that push me to grow as a developer and as a person.
+                </p>
               </div>
 
-              <div>
-                <h3 className="text-lg md:text-xl lg:text-2xl font-bold text-white text-center md:text-left mb-3">
+              <div className="mt-5 pt-5 border-t border-[#967259]/30">
+                <h3 className="text-base md:text-lg font-bold text-white text-center md:text-left mb-3">
                   Skills & Technologies
                 </h3>
-                <div className="flex flex-wrap gap-2 sm:gap-2.5 justify-center md:justify-start pb-2">
+                <div className="flex flex-wrap gap-2 md:gap-2.5 justify-center md:justify-start">
                   {SKILLS.map((skill) => (
                     <span
                       key={skill}
-                      className="inline-block px-2 py-0.5 sm:px-3.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium
+                      className="inline-block px-2.5 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium
                                  text-[#ece0d1] border border-[#967259]/40 bg-[#38220f]/45
                                  hover:border-[#967259] hover:bg-[#634832]/40 transition-colors duration-200"
                     >
