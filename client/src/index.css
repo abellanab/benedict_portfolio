@@ -406,17 +406,31 @@
 
   .experience-card-frame {
     width: min(88%, 860px);
-    max-height: min(62%, 560px);
+    max-height: min(90%, 1060px);
   }
 
   .experience-content {
     padding: clamp(1rem, 2vw, 2rem);
   }
 
+  @media (max-width: 1280px) and (min-width: 1025px) {
+    .experience-card-frame {
+      width: min(88%, 760px);
+      max-height: min(84%, 780px);
+    }
+  }
+
+  @media (max-width: 1024px) and (min-width: 768px) {
+    .experience-card-frame {
+      width: min(88%, 620px);
+      max-height: min(80%, 620px);
+    }
+  }
+
   @media (max-width: 767px) {
     .experience-card-frame {
       width: min(88vw, 340px);
-      max-height: min(58%, 460px);
+      max-height: min(72%, 540px);
     }
   }
 
@@ -603,7 +617,7 @@
 
     .experience-card-frame {
       width: min(88%, 620px);
-      max-height: min(58%, 440px);
+      max-height: min(80%, 620px);
     }
 
     .experience-content {
@@ -686,7 +700,7 @@
   }
 
   .experience-card-frame {
-    max-height: min(54%, 380px);
+    max-height: min(72%, 520px);
   }
 
   .about-grid {
