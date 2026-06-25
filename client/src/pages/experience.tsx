@@ -405,7 +405,7 @@ export default function Experience({
               }}
               className={`rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#967259] ${
                 idx === activeIndex
-                  ? 'w-6 md:w-8 h-2 md:h-2.5 bg-[#ece0d1] shadow-[0_0_10px_rgba(236,224,209,0.4)]'
+                  ? 'w-10 md:w-8 h-2 md:h-2.5 bg-[#ece0d1] shadow-[0_0_10px_rgba(236,224,209,0.4)]'
                   : 'w-2 md:w-2.5 h-2 md:h-2.5 bg-[#967259]/50 hover:bg-[#967259]'
               }`}
             />
