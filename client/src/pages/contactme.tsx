@@ -55,7 +55,7 @@ export default function ContactMe({
   return (
     <motion.section
       id="contact"
-      className="content-section content-section-secondary py-10 md:py-16 px-4 md:px-20 lg:px-28 overflow-y-auto min-h-0"
+      className="content-section content-section-secondary py-10 md:py-12 px-4 md:px-8 lg:px-28 overflow-y-auto min-h-0"
       style={{ width: viewportW, flexShrink: 0 }}
       // Per-section content entry: fade in with a small upward translate
       // when this panel becomes the active one. 0.1s delay lets the

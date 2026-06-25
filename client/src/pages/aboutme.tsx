@@ -48,7 +48,7 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
     <motion.section
       id="about"
       className={`content-section content-section-secondary overflow-y-auto ${
-        isMobile ? 'py-6 px-4' : 'py-12 md:py-16 px-6 md:px-12 lg:px-20 flex flex-col'
+        isMobile ? 'py-6 px-4' : 'py-10 md:py-12 px-4 md:px-8 lg:px-20 flex flex-col'
       }`}
       style={{ width: viewportW, flexShrink: 0 }}
       initial={false}

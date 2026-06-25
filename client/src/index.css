@@ -459,7 +459,7 @@
     gap: clamp(1.5rem, 3vw, 2.5rem);
   }
 
-  @media (min-width: 768px) and (min-height: 701px) {
+  @media (min-width: 1024px) and (min-height: 701px) {
     .contact-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -514,19 +514,20 @@
 
   .about-grid {
     display: grid;
-    gap: clamp(1.5rem, 3vw, 3rem);
+    gap: clamp(1rem, 2vw, 1.5rem);
     align-items: start;
-  }
-
-  @media (min-width: 1024px) and (min-height: 701px) {
-    .about-grid {
-      grid-template-columns: minmax(220px, 1.25fr) minmax(320px, 2fr);
-    }
   }
 
   @media (min-width: 1280px) and (min-height: 701px) {
     .about-grid {
+      grid-template-columns: minmax(220px, 1fr) minmax(320px, 1.75fr);
+    }
+  }
+
+  @media (min-width: 1536px) and (min-height: 701px) {
+    .about-grid {
       grid-template-columns: minmax(240px, 1fr) minmax(360px, 1.5fr);
+      gap: clamp(1.5rem, 3vw, 3rem);
     }
   }
 
@@ -546,14 +547,69 @@
 
   .resume-preview {
     width: 100%;
-    max-width: min(70%, 320px);
-    max-height: min(55vh, 540px);
+    max-width: min(70%, 280px);
+    max-height: min(50vh, 480px);
     aspect-ratio: 3 / 4;
     overflow: hidden;
     border-radius: 0.75rem;
     border: 1px solid rgba(150, 114, 89, 0.4);
     background-color: #fff;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Small laptop / tablet landscape (768px–1024px): keep layouts compact
+     and avoid two-column grids that clip or overflow. */
+  @media (max-width: 1024px) and (min-width: 768px) {
+    :root {
+      --nav-rail-width: 64px;
+    }
+
+    .content-section {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    .section-title {
+      font-size: 1.625rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .about-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .about-image {
+      min-height: clamp(180px, 28vh, 260px);
+    }
+
+    .about-bio {
+      padding: 1rem;
+    }
+
+    .experience-card-frame {
+      width: min(88%, 680px);
+      max-height: min(68%, 520px);
+    }
+
+    .experience-content {
+      padding: 1rem;
+    }
+
+    .contact-grid {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+
+    .resume-preview {
+      max-width: min(60%, 260px);
+      max-height: min(45vh, 400px);
+    }
+
+    .nav-icon-btn {
+      width: 2.25rem;
+      height: 2.25rem;
+    }
   }
 
   /* Role / company chip — small uppercase tag with the accent border
