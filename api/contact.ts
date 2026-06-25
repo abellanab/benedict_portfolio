@@ -98,7 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Server misconfigured — log on the server side, return a generic
     // error to the visitor so we don't leak env-var names.
     console.error('contact: GMAIL_USER or GMAIL_APP_PASSWORD not set');
-    return res.status(500).json({ error: 'Email service is not configured' });
+    return res.status(500).json({ error: 'Email service is not configured. Please check GMAIL_USER and GMAIL_APP_PASSWORD environment variables.' });
   }
 
   // Nodemailer transporter. Gmail SMTP over TLS on port 465 is the
@@ -139,6 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // the visitor. Common causes: bad App Password, Gmail rate limit,
     // network error to smtp.gmail.com.
     console.error('contact: send failed', err);
-    return res.status(502).json({ error: 'Failed to send email' });
+    const detail = err instanceof Error ? err.message : 'Failed to send email';
+    return res.status(502).json({ error: detail });
   }
 }

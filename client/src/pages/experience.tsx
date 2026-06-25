@@ -268,15 +268,13 @@ export default function Experience({
     return () => setWheelConsumer(null);
   }, [isActive]);
 
-  // Tap-to-flip (mobile only). On mobile the user can't swipe the
-  // card — that gesture is reserved for the parent track to change
-  // sections. Instead, a tap on the left half of the active card
-  // goes to the previous role; a tap on the right half goes to the
-  // next. Cards loop freely on tap (no section change from tapping);
-  // section change on mobile happens via horizontal swipe.
+  // Tap-to-flip (mobile + desktop). Users can tap/click the left half
+  // of the active card to go to the previous role, or the right half
+  // to go to the next. On desktop this complements the wheel scroll.
+  // Cards loop freely on tap; wheel-driven navigation still triggers
+  // section changes at the first/last card boundaries.
   const handleCardTap = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isMobile) return;
-    // Ignore taps that originated on a link/button inside the card —
+    // Ignore taps/clicks that originated on a link/button inside the card —
     // those should follow their own click target.
     const target = e.target as HTMLElement;
     if (target.closest('a, button, input, textarea, select')) return;
@@ -383,9 +381,9 @@ export default function Experience({
             >
               <div
                 onClick={handleCardTap}
-                // Tap target uses cursor-pointer so users get a hint
-                // that the card is interactive on mobile.
-                className="cursor-pointer md:cursor-default select-none h-full max-h-[560px] md:max-h-[620px]"
+                // Tap/click target uses cursor-pointer so users get a hint
+                // that the card is interactive on both mobile and desktop.
+                className="cursor-pointer select-none h-full max-h-[560px] md:max-h-[620px]"
                 style={{
                   width: cardWidth,
                 }}
