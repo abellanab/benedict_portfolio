@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectFlip } from 'swiper/modules';
@@ -198,6 +198,8 @@ export default function Experience({
   // Persist the user's last position across re-entries. `null` means
   // the user has never visited Experience before — start at 0.
   const lastIndexRef = useRef<number | null>(null);
+  // Visible tracker index so users see which card is active.
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
     onAdvanceRef.current = onAdvanceSection;
@@ -246,7 +248,6 @@ export default function Experience({
     }
     // Loop mode passes through here at the boundaries — Swiper's
     // loop=true handles the wrap with the same flip animation.
-    lastIndexRef.current = (currentIdx + direction + ROLES.length) % ROLES.length;
     if (direction === 1) swiper.slideNext();
     else swiper.slidePrev();
     return true;
@@ -267,6 +268,14 @@ export default function Experience({
     });
     return () => setWheelConsumer(null);
   }, [isActive]);
+
+  // Keep the visible tracker and persistence ref in sync whenever
+  // Swiper lands on a slide (including programmatic jumps).
+  const handleSlideChange = (swiper: SwiperInstance) => {
+    const realIdx = swiper.realIndex;
+    setActiveIndex(realIdx);
+    lastIndexRef.current = realIdx;
+  };
 
   // Tap-to-flip (mobile + desktop). Users can tap/click the left half
   // of the active card to go to the previous role, or the right half
@@ -315,7 +324,7 @@ export default function Experience({
           (capped at 1100px) so the card stays anchored regardless of
           viewport width. */}
       <div
-        className="relative mx-auto flex-1 min-h-0 w-full flex items-center justify-center"
+        className="relative mx-auto flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-3 md:gap-4"
         style={{ maxWidth: '1100px' }}
       >
         <Swiper
@@ -327,11 +336,11 @@ export default function Experience({
             // visited Experience. First-time visitors start at 0.
             const saved = lastIndexRef.current;
             if (saved !== null && saved > 0) {
-              // slideToLoop is safe here even with loop=false — it
-              // just routes to slideTo internally.
-              s.slideTo(saved, 0);
+              s.slideToLoop(saved, 0);
             }
+            setActiveIndex(s.realIndex);
           }}
+          onSlideChange={handleSlideChange}
           effect="flip"
           grabCursor
           // Disable Swiper's touch handling on mobile so horizontal
@@ -364,7 +373,7 @@ export default function Experience({
           pagination={false}
           navigation={false}
           scrollbar={false}
-          className="w-full h-full"
+          className="w-full flex-1 min-h-0"
         >
           {ROLES.map((role) => (
             <SwiperSlide
@@ -393,6 +402,29 @@ export default function Experience({
             </SwiperSlide>
           ))}
         </Swiper>
+
+        {/* Card tracker dots — shows how many experience cards exist and
+            which one is active. Clicking a dot jumps directly to that card. */}
+        <div className="flex items-center gap-2 md:gap-3 shrink-0 pb-1 md:pb-0">
+          {ROLES.map((role, idx) => (
+            <button
+              key={role.title}
+              type="button"
+              aria-label={`Go to ${role.title}`}
+              aria-current={idx === activeIndex ? 'true' : undefined}
+              onClick={() => {
+                const swiper = swiperRef.current;
+                if (!swiper) return;
+                swiper.slideToLoop(idx);
+              }}
+              className={`rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#967259] ${
+                idx === activeIndex
+                  ? 'w-6 md:w-8 h-2 md:h-2.5 bg-[#ece0d1] shadow-[0_0_10px_rgba(236,224,209,0.4)]'
+                  : 'w-2 md:w-2.5 h-2 md:h-2.5 bg-[#967259]/50 hover:bg-[#967259]'
+              }`}
+            />
+          ))}
+        </div>
       </div>
     </motion.section>
   );
