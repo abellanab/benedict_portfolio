@@ -120,10 +120,10 @@ function ActiveCardContent({ role }: { role: Role }) {
     <div
       className="glass-card-dark experience-content w-full h-full flex flex-col overflow-hidden"
     >
-      <header className="shrink-0 mb-3 md:mb-5">
-        <span className="role-chip mb-2 md:mb-3">{role.company}</span>
+      <header className="shrink-0 mb-2 md:mb-4">
+        <span className="role-chip mb-1 md:mb-2">{role.company}</span>
         <h3
-          className="font-bold text-white mt-2 md:mt-3 text-lg sm:text-xl md:text-2xl lg:text-3xl break-words"
+          className="font-bold text-white mt-1 md:mt-2 text-lg sm:text-xl md:text-2xl break-words leading-tight"
         >
           {role.title}
         </h3>
@@ -132,9 +132,9 @@ function ActiveCardContent({ role }: { role: Role }) {
         </p>
       </header>
 
-      <hr className="section-divider shrink-0 mb-3 md:mb-5" />
+      <hr className="section-divider shrink-0 mb-2 md:mb-4" />
 
-      <div className="flex-1 min-h-0 space-y-5 overflow-y-auto text-sm md:text-base">
+      <div className="flex-1 min-h-0 space-y-4 overflow-y-auto text-sm md:text-base">
         {role.projects.map((project, pidx) => (
           <div key={pidx}>
             {project.link ? (
@@ -293,7 +293,7 @@ export default function Experience({
   return (
     <motion.section
       id="experience"
-      className="content-section content-section-primary py-8 md:py-10 px-4 md:px-8 lg:px-28 flex flex-col min-h-0"
+      className="content-section content-section-primary py-6 md:py-8 px-4 md:px-8 lg:px-28 flex flex-col min-h-0"
       style={{ width: viewportW, flexShrink: 0 }}
       // Per-section content entry: fade in with a small upward translate
       // when this panel becomes the active one. 0.1s delay lets the
@@ -303,7 +303,7 @@ export default function Experience({
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: isActive ? 0.1 : 0 }}
     >
       {/* Header */}
-      <div className="mb-4 md:mb-6 shrink-0">
+      <div className="mb-3 md:mb-4 shrink-0">
         <h2 className="section-title section-title-experience mb-0">Experience</h2>
       </div>
 
@@ -313,7 +313,7 @@ export default function Experience({
           (capped at 1100px) so the card stays anchored regardless of
           viewport width. */}
       <div
-        className="relative mx-auto flex-1 min-h-0 w-full flex flex-col items-center justify-center gap-3 md:gap-4"
+        className="relative mx-auto flex-1 min-h-0 w-full flex flex-col items-center justify-start gap-3 md:gap-4 pt-2"
         style={{ maxWidth: '1100px' }}
       >
         <Swiper
