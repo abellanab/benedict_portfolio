@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useIsMobile } from '@/hooks/useMobile';
 
@@ -37,16 +38,27 @@ const PROFILE_IMAGE = '/profile.jpg';
  *     cleanly. The whole block is vertically centered between the title and
  *     the bottom of the viewport. On very short viewports it switches to a
  *     single vertical stack.
- *   - Mobile (≤767px): circular avatar above a stacked bio and skills.
+ *   - Tablet / small mobile (≤768px): circular avatar above a stacked bio
+     and skills, matching the mobile layout.
  */
 export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
   const isMobile = useIsMobile();
+  const [isTabletStack, setIsTabletStack] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsTabletStack(window.innerWidth <= 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  const useStackedLayout = isMobile || isTabletStack;
 
   return (
     <motion.section
       id="about"
       className={`content-section content-section-secondary ${
-        isMobile ? 'py-6 px-4' : 'py-10 md:py-12 px-4 md:px-8 lg:px-20 flex flex-col'
+        useStackedLayout ? 'py-6 px-4' : 'py-10 md:py-12 px-4 md:px-8 lg:px-20 flex flex-col'
       }`}
       style={{ width: viewportW, flexShrink: 0 }}
       initial={false}
@@ -55,7 +67,7 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
     >
       <h2 className="section-title section-title-about shrink-0">About Me</h2>
 
-      {isMobile ? (
+      {useStackedLayout ? (
         // Mobile: vertical flow with a compact avatar above the bio.
         <div className="mx-auto w-full max-w-3xl space-y-5 pt-1 pb-6">
           <div className="flex justify-center">
