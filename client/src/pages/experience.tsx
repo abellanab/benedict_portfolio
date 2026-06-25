@@ -293,7 +293,7 @@ export default function Experience({
   return (
     <motion.section
       id="experience"
-      className="content-section content-section-primary py-8 md:py-10 px-4 md:px-8 lg:px-28 overflow-y-auto flex flex-col min-h-0"
+      className="content-section content-section-primary py-8 md:py-10 px-4 md:px-8 lg:px-28 flex flex-col min-h-0"
       style={{ width: viewportW, flexShrink: 0 }}
       // Per-section content entry: fade in with a small upward translate
       // when this panel becomes the active one. 0.1s delay lets the

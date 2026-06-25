@@ -329,6 +329,10 @@
        overflow-y-auto scroll. */
     min-height: 0;
     min-width: 0;
+    /* Ensure every panel becomes independently scrollable if its content
+       exceeds the available viewport space (short laptops, zoomed views,
+       or very long content). */
+    overflow-y: auto;
   }
 
   .content-section-primary {

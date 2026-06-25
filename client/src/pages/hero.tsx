@@ -34,7 +34,7 @@ export default function Hero({ viewportW, totalWidth, bgX, fgX, onCtaClick, isAc
 
   return (
     <motion.section
-      className="relative h-full flex items-center justify-start px-4 sm:px-5 md:px-20 lg:px-28 overflow-y-auto"
+      className="relative h-full flex items-center justify-start px-4 sm:px-5 md:px-20 lg:px-28"
       style={{ width: viewportW, flexShrink: 0 }}
       // Per-section content entry animation: when this section becomes
       // active, fade the whole hero in with a small upward translate.

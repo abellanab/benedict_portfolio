@@ -18,7 +18,7 @@ export default function Resume({ viewportW, isActive }: ResumeProps) {
   return (
     <motion.section
       id="resume"
-      className="content-section content-section-primary py-10 md:py-12 px-4 md:px-8 lg:px-28 overflow-y-auto min-h-0"
+      className="content-section content-section-primary py-10 md:py-12 px-4 md:px-8 lg:px-28 min-h-0"
       style={{ width: viewportW, flexShrink: 0 }}
       // Per-section content entry: fade in with a small upward translate
       // when this panel becomes the active one. 0.1s delay lets the
@@ -30,7 +30,7 @@ export default function Resume({ viewportW, isActive }: ResumeProps) {
       <h2 className="section-title section-title-resume">Resume</h2>
 
       <div className="max-w-3xl mx-auto w-full flex flex-col items-center gap-6 min-h-0">
-        <div className="glass-card-dark p-5 sm:p-7 md:p-10 w-full flex flex-col items-center text-center gap-6">
+        <div className="glass-card-dark p-5 sm:p-7 md:p-10 w-full flex flex-col items-center text-center gap-6 min-h-0">
           <span className="role-chip">Document</span>
           <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
             My Resume

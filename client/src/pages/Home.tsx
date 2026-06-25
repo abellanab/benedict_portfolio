@@ -388,44 +388,44 @@ export default function Home() {
           animate={{ x: -activeIndex * viewportW }}
           transition={rowTransition}
         >
-        {/* Hero Section */}
-        <Hero
-          viewportW={viewportW}
-          totalWidth={totalWidth}
-          bgX={bgX}
-          fgX={fgX}
-          onCtaClick={() => scrollToSection('contact')}
-          isActive={activeSection === 'home'}
-        />
+          {/* Hero Section */}
+          <Hero
+            viewportW={viewportW}
+            totalWidth={totalWidth}
+            bgX={bgX}
+            fgX={fgX}
+            onCtaClick={() => scrollToSection('contact')}
+            isActive={activeSection === 'home'}
+          />
 
-        {/* Experience Section */}
-        <Experience
-          viewportW={viewportW}
-          isActive={activeSection === 'experience'}
-          onAdvanceSection={() => goToIndex(SECTIONS.indexOf('about'))}
-          onRetreatSection={() => goToIndex(SECTIONS.indexOf('home'))}
-        />
+          {/* Experience Section */}
+          <Experience
+            viewportW={viewportW}
+            isActive={activeSection === 'experience'}
+            onAdvanceSection={() => goToIndex(SECTIONS.indexOf('about'))}
+            onRetreatSection={() => goToIndex(SECTIONS.indexOf('home'))}
+          />
 
-        {/* About Section */}
-        <AboutMe viewportW={viewportW} isActive={activeSection === 'about'} />
+          {/* About Section */}
+          <AboutMe viewportW={viewportW} isActive={activeSection === 'about'} />
 
-        {/* Resume Section */}
-        <Resume viewportW={viewportW} isActive={activeSection === 'resume'} />
+          {/* Resume Section */}
+          <Resume viewportW={viewportW} isActive={activeSection === 'resume'} />
 
-        {/* Contact Section */}
-        <ContactMe
-          viewportW={viewportW}
-          isMobile={isMobile}
-          formData={formData}
-          isSubmitting={isSubmitting}
-          onSubmit={handleFormSubmit}
-          onInputChange={handleInputChange}
-          footerBottomPadding={0}
-          isActive={activeSection === 'contact'}
-          submitStatus={submitStatus}
-          submitError={submitError}
-        />
-      </motion.div>
+          {/* Contact Section */}
+          <ContactMe
+            viewportW={viewportW}
+            isMobile={isMobile}
+            formData={formData}
+            isSubmitting={isSubmitting}
+            onSubmit={handleFormSubmit}
+            onInputChange={handleInputChange}
+            footerBottomPadding={0}
+            isActive={activeSection === 'contact'}
+            submitStatus={submitStatus}
+            submitError={submitError}
+          />
+        </motion.div>
       </div>
     </div>
   );
