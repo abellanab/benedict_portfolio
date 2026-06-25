@@ -66,7 +66,7 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
       animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: isActive ? 0.1 : 0 }}
     >
-      <h2 className={`section-title section-title-about ${isMobile ? 'shrink-0' : ''}`}>About Me</h2>
+      <h2 className="section-title section-title-about shrink-0">About Me</h2>
 
       {isMobile ? (
         // Mobile: plain block flow so `overflow-y-auto` on the section
@@ -74,8 +74,8 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
         <div className="mx-auto w-full max-w-3xl space-y-5 pt-1 pb-6">
           {/* Bio card — tighter padding/text on mobile to leave room
               for the skills grid below. */}
-          <div className="glass-card-dark p-5">
-            <div className="space-y-3 text-base text-gray-200 leading-relaxed text-center">
+          <div className="glass-card-dark p-4 sm:p-5">
+            <div className="space-y-3 text-sm sm:text-base text-gray-200 leading-relaxed text-center">
               <p>
                 I am Benedict Abellana, a Computer Engineering student at the University of San Carlos
                 who is passionate about frontend development and aspire to be a skilled developer
@@ -98,7 +98,7 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
             {SKILLS.map((skill) => (
               <span
                 key={skill}
-                className="inline-block px-3 py-1 rounded-full text-xs font-medium
+                className="inline-block px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium
                            text-[#ece0d1] border border-[#967259]/40 bg-[#38220f]/45
                            hover:border-[#967259] hover:bg-[#634832]/40 transition-colors duration-200"
               >
@@ -111,9 +111,9 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
         // Desktop: flex column with `flex-1 justify-center` on the
         // content area so bio + skills sit in the vertical middle
         // below the title.
-        <div className="flex-1 flex flex-col justify-center max-w-3xl mx-auto w-full space-y-6">
-          <div className="glass-card-dark p-7 md:p-9">
-            <div className="space-y-6 text-lg text-gray-200 leading-relaxed text-center">
+        <div className="flex-1 flex flex-col justify-center min-h-0 max-w-3xl mx-auto w-full space-y-6">
+          <div className="glass-card-dark p-4 sm:p-6 md:p-9">
+            <div className="space-y-6 text-base md:text-lg text-gray-200 leading-relaxed text-center">
               <p>
                 I am Benedict Abellana, a Computer Engineering student at the University of San Carlos
                 who is passionate about frontend development and aspire to be a skilled developer
@@ -131,11 +131,11 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
           <h3 className="text-xl md:text-2xl font-bold text-white text-center">
             Skills & Technologies
           </h3>
-          <div className="flex flex-wrap gap-2.5 justify-center pb-2">
+          <div className="flex flex-wrap gap-2 sm:gap-2.5 justify-center pb-2">
             {SKILLS.map((skill) => (
               <span
                 key={skill}
-                className="inline-block px-3.5 py-1.5 rounded-full text-xs font-medium
+                className="inline-block px-2 py-0.5 sm:px-3.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium
                            text-[#ece0d1] border border-[#967259]/40 bg-[#38220f]/45
                            hover:border-[#967259] hover:bg-[#634832]/40 transition-colors duration-200"
               >

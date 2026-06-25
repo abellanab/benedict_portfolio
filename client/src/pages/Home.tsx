@@ -42,9 +42,15 @@ const ANIM_LOCK_MS = 600;
 
 export default function Home() {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [viewportW, setViewportW] = useState(
-    typeof window === 'undefined' ? 1440 : window.innerWidth
-  );
+  const trackContainerRef = useRef<HTMLDivElement>(null);
+  const [viewportW, setViewportW] = useState(() => {
+    if (typeof window === 'undefined') return 1440;
+    // Initial estimate: desktop left rail is reserved, mobile dock reserves
+    // no width. The real value is measured from the track container after
+    // mount so it reflects the actual content area.
+    const navOffset = window.innerWidth < 768 ? 0 : NAV_WIDTH_DESKTOP;
+    return window.innerWidth - navOffset;
+  });
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Tracks the last submit outcome so the contact form can show a
@@ -59,10 +65,18 @@ export default function Home() {
 
   const x = useMotionValue(-activeIndex * viewportW);
 
+  // Measure the actual track container width so viewportW is the content
+  // area (viewport minus the desktop left rail and any scrollbar). Resize
+  // re-measures; the nav width is handled by CSS (md:ml-20) so the ref
+  // clientWidth already excludes it.
   useEffect(() => {
-    const onResize = () => setViewportW(window.innerWidth);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    const measure = () => {
+      if (!trackContainerRef.current) return;
+      setViewportW(trackContainerRef.current.clientWidth);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
   }, []);
 
   const goToIndex = useCallback(
@@ -199,9 +213,6 @@ export default function Home() {
   const bgX = useTransform(x, [-totalWidth, 0], [totalWidth * 0.15, 0]);
   const fgX = useTransform(x, [-totalWidth, 0], [-totalWidth * 0.05, 0]);
 
-  // How much horizontal space the nav takes out of the viewport. Mobile bottom
-  // dock doesn't reserve any width; desktop left rail takes 80px.
-  const navOffset = isMobile ? 0 : NAV_WIDTH_DESKTOP;
   // Spring on mobile feels like a finger flick; tween on desktop matches wheel.
   // Both are tuned to feel snappy (≤ 0.55s) so transitions read as motion
   // rather than loading lag.
@@ -261,9 +272,9 @@ export default function Home() {
   const activeSection = SECTIONS[activeIndex];
 
   return (
-    <div className="h-screen w-screen bg-[#38220f] text-white overflow-hidden">
+    <div className="h-[var(--viewport-h)] w-screen bg-[#38220f] text-white overflow-hidden">
       {/* Desktop: Left-side Vertical Navigation Bar */}
-      <nav className="fixed left-0 top-0 h-screen w-20 bg-[#38220f]/95 backdrop-blur-md border-r border-[#967259]/30 shadow-[4px_0_24px_rgba(0,0,0,0.35)] flex-col items-center justify-center gap-8 z-50 hidden md:flex">
+      <nav className="fixed left-0 top-0 h-[var(--viewport-h)] w-20 bg-[#38220f]/95 backdrop-blur-md border-r border-[#967259]/30 shadow-[4px_0_24px_rgba(0,0,0,0.35)] flex-col items-center justify-center gap-8 z-50 hidden md:flex">
         <button
           onClick={() => scrollToSection('home')}
           className={`nav-icon-btn ${activeSection === 'home' ? 'active' : ''}`}
@@ -306,7 +317,7 @@ export default function Home() {
       </nav>
 
       {/* Mobile: Bottom Dock Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[#38220f]/95 backdrop-blur-md border-t border-[#967259]/30 shadow-[0_-4px_24px_rgba(0,0,0,0.35)] flex-row items-center justify-around z-50 flex md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 h-[calc(64px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-[#38220f]/95 backdrop-blur-md border-t border-[#967259]/30 shadow-[0_-4px_24px_rgba(0,0,0,0.35)] flex-row items-center justify-around z-50 flex md:hidden">
         <button
           onClick={() => scrollToSection('home')}
           className={`nav-icon-btn ${activeSection === 'home' ? 'active' : ''}`}
@@ -349,24 +360,27 @@ export default function Home() {
       </nav>
 
       {/* Horizontal Track */}
-      <motion.div
-        className="flex flex-row h-full"
-        style={{
-          width: totalWidth,
-          x,
-          marginLeft: navOffset,
-          // `touch-action: pan-y` lets the browser handle vertical
-          // scrolls natively inside child sections (e.g. the About
-          // page's bio + skills column on mobile). Only horizontal
-          // swipes are routed to our manual touch handler above.
-          // We previously used framer-motion's `drag` prop here, but
-          // it set `touch-action: none` which blocked native vertical
-          // scrolling.
-          touchAction: 'pan-y',
-        }}
-        animate={{ x: -activeIndex * viewportW }}
-        transition={rowTransition}
+      <div
+        ref={trackContainerRef}
+        className="h-full min-w-0 min-h-0 overflow-hidden ml-0 md:ml-20"
       >
+        <motion.div
+          className="flex flex-row h-full min-w-0 min-h-0"
+          style={{
+            width: totalWidth,
+            x,
+            // `touch-action: pan-y` lets the browser handle vertical
+            // scrolls natively inside child sections (e.g. the About
+            // page's bio + skills column on mobile). Only horizontal
+            // swipes are routed to our manual touch handler above.
+            // We previously used framer-motion's `drag` prop here, but
+            // it set `touch-action: none` which blocked native vertical
+            // scrolling.
+            touchAction: 'pan-y',
+          }}
+          animate={{ x: -activeIndex * viewportW }}
+          transition={rowTransition}
+        >
         {/* Hero Section */}
         <Hero
           viewportW={viewportW}
@@ -374,7 +388,6 @@ export default function Home() {
           bgX={bgX}
           fgX={fgX}
           onCtaClick={() => scrollToSection('contact')}
-          isMobile={isMobile}
           isActive={activeSection === 'home'}
         />
 
@@ -406,6 +419,7 @@ export default function Home() {
           submitError={submitError}
         />
       </motion.div>
+      </div>
     </div>
   );
 }

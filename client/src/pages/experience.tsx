@@ -117,34 +117,26 @@ const WHEEL_DEBOUNCE_MS = 250;
  * Single active role card. Shows the role header, all sub-projects with
  * bullets, and optional links.
  */
-function ActiveCardContent({ role, isMobile }: { role: Role; isMobile: boolean }) {
+function ActiveCardContent({ role }: { role: Role }) {
   return (
     <div
-      className={`glass-card-dark w-full h-full flex flex-col overflow-hidden ${
-        isMobile ? 'p-4' : 'p-8 md:p-9'
-      }`}
+      className={`glass-card-dark w-full h-full flex flex-col overflow-hidden p-4 sm:p-6 md:p-8 lg:p-9`}
     >
-      <header className={`shrink-0 ${isMobile ? 'mb-3' : 'mb-5'}`}>
+      <header className="shrink-0 mb-3 md:mb-5">
         <span className="role-chip mb-2 md:mb-3">{role.company}</span>
         <h3
-          className={`font-bold text-white mt-2 md:mt-3 ${
-            isMobile ? 'text-xl' : 'text-2xl md:text-3xl lg:text-4xl'
-          }`}
+          className="font-bold text-white mt-2 md:mt-3 text-lg sm:text-xl md:text-2xl lg:text-3xl break-words"
         >
           {role.title}
         </h3>
-        <p
-          className={`text-gray-300 mt-1 ${
-            isMobile ? 'text-[11px]' : 'text-xs md:text-sm'
-          }`}
-        >
+        <p className="text-gray-300 mt-1 text-[10px] sm:text-xs md:text-sm">
           {role.dates}
         </p>
       </header>
 
-      <hr className={`section-divider shrink-0 ${isMobile ? 'mb-3' : 'mb-5'}`} />
+      <hr className="section-divider shrink-0 mb-3 md:mb-5" />
 
-      <div className={`space-y-5 overflow-y-auto ${isMobile ? 'text-sm' : ''}`}>
+      <div className="flex-1 min-h-0 space-y-5 overflow-y-auto text-sm md:text-base">
         {role.projects.map((project, pidx) => (
           <div key={pidx}>
             {project.link ? (
@@ -152,18 +144,12 @@ function ActiveCardContent({ role, isMobile }: { role: Role; isMobile: boolean }
                 href={project.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`font-semibold text-white hover:underline underline-offset-4 decoration-1 break-words ${
-                  isMobile ? 'block text-sm' : 'inline-block text-base'
-                }`}
+                className="font-semibold text-white hover:underline underline-offset-4 decoration-1 break-words block text-sm md:text-base"
               >
                 {project.subtitle}
               </a>
             ) : (
-              <p
-                className={`font-semibold text-white ${
-                  isMobile ? 'text-sm' : 'text-base'
-                }`}
-              >
+              <p className="font-semibold text-white text-sm md:text-base">
                 {project.subtitle}
               </p>
             )}
@@ -171,7 +157,7 @@ function ActiveCardContent({ role, isMobile }: { role: Role; isMobile: boolean }
               {project.bullets.map((bullet, bidx) => (
                 <li
                   key={bidx}
-                  className="flex items-start gap-2.5 text-gray-200 text-sm leading-relaxed"
+                  className="flex items-start gap-2.5 text-gray-200 text-xs sm:text-sm leading-relaxed"
                 >
                   <span className="mt-1 shrink-0 text-[#967259]">▸</span>
                   <span>{bullet}</span>
@@ -300,22 +286,18 @@ export default function Experience({
     navigate(direction, 'loop');
   };
 
-  // Card sizing:
-  // - Mobile: card fills most of the viewport (88vw) but caps at 360px
-  //   so a small phone doesn't render a cramped giant card. Height caps
-  //   at 72vh / 560px so the header + bullets + flip space all fit.
-  // - Desktop: card grows with the viewport — 720px on standard
-  //   laptops, scaling to ~820px on wide displays so the card has
-  //   visual weight in the section without crowding the edges.
+  // Card width: scales with the viewport while preserving the flip
+  // animation's aspect ratio. The card's height is driven by the
+  // available section space (flex-1 wrapper) and capped so it never
+  // grows unwieldy on tall displays.
   const cardWidth = isMobile
     ? 'min(88vw, 360px)'
     : 'clamp(720px, 50vw, 820px)';
-  const cardHeight = isMobile ? 'min(72vh, 560px)' : 'min(72vh, 620px)';
 
   return (
     <motion.section
       id="experience"
-      className="content-section content-section-primary py-8 md:py-12 px-4 md:px-20 lg:px-28 overflow-hidden flex flex-col"
+      className="content-section content-section-primary py-8 md:py-12 px-4 md:px-20 lg:px-28 overflow-y-auto flex flex-col min-h-0"
       style={{ width: viewportW, flexShrink: 0 }}
       // Per-section content entry: fade in with a small upward translate
       // when this panel becomes the active one. 0.1s delay lets the
@@ -384,10 +366,9 @@ export default function Experience({
           pagination={false}
           navigation={false}
           scrollbar={false}
-          className="w-full"
-          style={{ height: cardHeight }}
+          className="w-full h-full"
         >
-          {ROLES.map((role, idx) => (
+          {ROLES.map((role) => (
             <SwiperSlide
               key={role.title}
               // Inline style centers the slide content as a fallback
@@ -397,19 +378,19 @@ export default function Experience({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                height: '100%',
               }}
             >
               <div
                 onClick={handleCardTap}
                 // Tap target uses cursor-pointer so users get a hint
                 // that the card is interactive on mobile.
-                className="cursor-pointer md:cursor-default select-none"
+                className="cursor-pointer md:cursor-default select-none h-full max-h-[560px] md:max-h-[620px]"
                 style={{
                   width: cardWidth,
-                  height: cardHeight,
                 }}
               >
-                <ActiveCardContent role={role} isMobile={isMobile} />
+                <ActiveCardContent role={role} />
               </div>
             </SwiperSlide>
           ))}
