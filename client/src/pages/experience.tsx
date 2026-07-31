@@ -11,7 +11,6 @@ interface ExperienceProps {
 interface Project {
   subtitle: string;
   bullets: string[];
-  link?: string;
 }
 
 interface Role {
@@ -31,28 +30,24 @@ const ROLES: Role[] = [
     projects: [
       {
         subtitle: 'Basketball Runs',
-        link: 'https://ballruns.vercel.app/',
         bullets: [
           "Built a mobile-first app for organizing pickup basketball games, with live score, queue, and rotation synced to every player's phone at the court, plus automatic team balancing and game history.",
         ],
       },
       {
         subtitle: 'TapOK',
-        link: 'https://www.tapok.app/',
         bullets: [
           'Built an event discovery and meetup platform where users create and share "Drops" — quick event plans with a name, time, and place — and track attendance through a live roster.',
         ],
       },
       {
         subtitle: 'Zeus & Athena Cosmetics',
-        link: 'https://zeus-athena-cosmetics.vercel.app/',
         bullets: [
           'Built an e-commerce storefront for a natural skincare brand, including product listings, customer ratings, and a newsletter signup.',
         ],
       },
       {
         subtitle: 'Doro Barandino Portfolio',
-        link: 'https://dorobarandino-portfolio.vercel.app/',
         bullets: [
           'Built a portfolio site showcasing handcrafted jewelry collections and architectural design projects, with a section for custom commission inquiries.',
         ],
@@ -139,18 +134,7 @@ function RoleCardContent({ role, isFront }: { role: Role; isFront: boolean }) {
           <div className="experience-deck-projects overflow-y-auto text-base flex-1">
             {role.projects.map((project, pidx) => (
               <div key={pidx}>
-                {project.link ? (
-                  <a
-                    href={project.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-white hover:underline underline-offset-4 decoration-1 break-words block text-lg"
-                  >
-                    {project.subtitle}
-                  </a>
-                ) : (
-                  <p className="font-bold text-white text-lg">{project.subtitle}</p>
-                )}
+                <p className="font-bold text-white text-lg">{project.subtitle}</p>
                 <ul className="mt-2 space-y-1.5">
                   {project.bullets.map((bullet, bidx) => (
                     <li key={bidx} className="flex items-start gap-2.5 text-gray-200 text-base leading-relaxed">
@@ -264,8 +248,8 @@ export default function Experience({ viewportW, isActive, onAdvanceSection, onRe
   }, [isActive]);
 
   // Tap/click left half of the front card = previous, right half = next
-  // (loops). Ignored when the click lands on an interactive descendant
-  // (e.g. a project link) so those keep working normally.
+  // (loops). Ignored when the click lands on an interactive descendant so
+  // those keep working normally.
   const handleCardTap = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     if (target.closest('a, button, input, textarea, select')) return;
