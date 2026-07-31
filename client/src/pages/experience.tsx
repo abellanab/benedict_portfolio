@@ -1,11 +1,5 @@
-import { useRef, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { EffectFlip } from 'swiper/modules';
-import type { Swiper as SwiperInstance } from 'swiper';
-
-import 'swiper/css';
-import 'swiper/css/effect-flip';
 
 interface ExperienceProps {
   viewportW: number;
@@ -27,9 +21,44 @@ interface Role {
   projects: Project[];
 }
 
-// Order matters here: this defines the carousel sequence.
-// 1 = Internship, 2 = AI Agents (Openclaw), 3 = Personal Projects.
+// Order matters here: this defines the deck's chronological front-to-back
+// sequence (index 0 first).
 const ROLES: Role[] = [
+  {
+    title: 'Freelance Front-End Developer',
+    company: 'Independent',
+    dates: 'January 2026 - Present',
+    projects: [
+      {
+        subtitle: 'Basketball Runs',
+        link: 'https://ballruns.vercel.app/',
+        bullets: [
+          "Built a mobile-first app for organizing pickup basketball games, with live score, queue, and rotation synced to every player's phone at the court, plus automatic team balancing and game history.",
+        ],
+      },
+      {
+        subtitle: 'TapOK',
+        link: 'https://www.tapok.app/',
+        bullets: [
+          'Built an event discovery and meetup platform where users create and share "Drops" — quick event plans with a name, time, and place — and track attendance through a live roster.',
+        ],
+      },
+      {
+        subtitle: 'Zeus & Athena Cosmetics',
+        link: 'https://zeus-athena-cosmetics.vercel.app/',
+        bullets: [
+          'Built an e-commerce storefront for a natural skincare brand, including product listings, customer ratings, and a newsletter signup.',
+        ],
+      },
+      {
+        subtitle: 'Doro Barandino Portfolio',
+        link: 'https://dorobarandino-portfolio.vercel.app/',
+        bullets: [
+          'Built a portfolio site showcasing handcrafted jewelry collections and architectural design projects, with a section for custom commission inquiries.',
+        ],
+      },
+    ],
+  },
   {
     title: 'Internship',
     company: 'Techflow.AI',
@@ -64,32 +93,8 @@ const ROLES: Role[] = [
         subtitle: 'Openclaw Agent',
         bullets: [
           'Prompt Master — Designed and implemented a prompt-engineering framework that enables AI to transform users prompts using the best prompting structure resulting the best output.',
-          'Project Manager  — Created a project management agent that turns vague automation ideas into implementation-ready blueprints for tools like n8n, Make.com, and Zapier.', 
+          'Project Manager  — Created a project management agent that turns vague automation ideas into implementation-ready blueprints for tools like n8n, Make.com, and Zapier.',
           'UI UX Designer — Built to focus on user experience, creating intuitive, accessible, and aesthetically pleasing user interfaces',
-        ],
-      },
-    ],
-  },
-  {
-    title: 'Personal Projects',
-    company: 'Personal',
-    dates: 'May 2026 - Present',
-    projects: [
-      {
-        subtitle: 'Basketball Runs',
-        link: 'https://ballruns.vercel.app/',
-        bullets: [
-          'Developed a game history page enabling users to view all created and joined games, with automatic MVP highlights upon game completion.',
-          'Built the landing page displaying active games in real time, allowing hosts to instantly create or join ongoing pickup basketball sessions.',
-          'Developed a game history and landing page system that surfaces active games, tracks participation records, and automatically highlights MVPs after each session.',
-          'Deployed Basketball Runs to local basketball clubs for real-world user testing, gathering feedback to validate core features and improve the overall experience.',
-        ],
-      },
-      {
-        subtitle: 'TapOK',
-        link: 'https://tapok.app',
-        bullets: [
-          'Crafted TapOK\'s landing page experience from concept to execution, defining the platform\'s visual language through cohesive color systems, animation-driven interactions, and an intuitive top-centered navigation layout.',
         ],
       },
     ],
@@ -99,7 +104,7 @@ const ROLES: Role[] = [
 // Module-level wheel consumer registry. Home.tsx's window-level wheel
 // handler checks this on every wheel event; if a consumer returns true,
 // Home skips its default section-track advance. Only one section may
-// register at a time (Experience registers on mount, clears on unmount).
+// register at a time (Experience registers while active, clears otherwise).
 type WheelConsumer = (deltaY: number) => boolean;
 let activeWheelConsumer: WheelConsumer | null = null;
 export function setWheelConsumer(fn: WheelConsumer | null) {
@@ -109,96 +114,79 @@ export function getWheelConsumer(): WheelConsumer | null {
   return activeWheelConsumer;
 }
 
-// Wheel-debounce window. 250ms coalesces trackpad inertia but lets a
-// deliberate second scroll land in under half a second.
 const WHEEL_DEBOUNCE_MS = 250;
 
-/**
- * Single active role card. Shows the role header, all sub-projects with
- * bullets, and optional links.
- */
-function ActiveCardContent({ role }: { role: Role }) {
+// Cards further than this many positions from the front are fully hidden
+// (opacity 0, non-interactive) rather than unmounted, so the deck still
+// looks right with more than a couple of roles without changing behavior.
+const MAX_PEEK = 2;
+const TINT_COUNT = 3;
+const PEEK_STEP_X = 16;
+const PEEK_STEP_ROTATE = 5;
+const PEEK_SCALE_STEP = 0.07;
+const PEEK_OPACITY_STEP = 0.4;
+const DECK_SPRING = { type: 'spring', stiffness: 300, damping: 30 } as const;
+
+function RoleCardContent({ role, isFront }: { role: Role; isFront: boolean }) {
   return (
-    <div
-      className="glass-card-dark experience-content w-full h-full flex flex-col overflow-hidden"
-    >
-      <header className="shrink-0 mb-2 md:mb-4">
-        <span className="role-chip mb-1 md:mb-2">{role.company}</span>
-        <h3
-          className="font-bold text-white mt-1 md:mt-2 text-lg sm:text-xl md:text-2xl break-words leading-tight"
-        >
-          {role.title}
-        </h3>
-        <p className="text-gray-300 mt-1 text-[10px] sm:text-xs md:text-sm">
-          {role.dates}
-        </p>
-      </header>
-
-      <hr className="section-divider shrink-0 mb-2 md:mb-4" />
-
-      <div className="flex-1 min-h-0 space-y-4 overflow-y-auto text-sm md:text-base">
-        {role.projects.map((project, pidx) => (
-          <div key={pidx}>
-            {project.link ? (
-              <a
-                href={project.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-white hover:underline underline-offset-4 decoration-1 break-words block text-sm md:text-base"
-              >
-                {project.subtitle}
-              </a>
-            ) : (
-              <p className="font-semibold text-white text-sm md:text-base">
-                {project.subtitle}
-              </p>
-            )}
-            <ul className="mt-2 space-y-1.5">
-              {project.bullets.map((bullet, bidx) => (
-                <li
-                  key={bidx}
-                  className="flex items-start gap-2.5 text-gray-200 text-xs sm:text-sm leading-relaxed"
-                >
-                  <span className="mt-1 shrink-0 text-[#967259]">▸</span>
-                  <span>{bullet}</span>
-                </li>
-              ))}
-            </ul>
+    <div className="experience-content experience-deck-card-inner">
+      <span className="role-chip">{role.company}</span>
+      <h3 className="experience-deck-title">{role.title}</h3>
+      {isFront && (
+        <>
+          <span className="experience-deck-dates">{role.dates}</span>
+          <hr className="section-divider shrink-0 my-2 md:my-3" />
+          <div className="experience-deck-projects overflow-y-auto text-base flex-1">
+            {role.projects.map((project, pidx) => (
+              <div key={pidx}>
+                {project.link ? (
+                  <a
+                    href={project.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-white hover:underline underline-offset-4 decoration-1 break-words block text-lg"
+                  >
+                    {project.subtitle}
+                  </a>
+                ) : (
+                  <p className="font-bold text-white text-lg">{project.subtitle}</p>
+                )}
+                <ul className="mt-2 space-y-1.5">
+                  {project.bullets.map((bullet, bidx) => (
+                    <li key={bidx} className="flex items-start gap-2.5 text-gray-200 text-base leading-relaxed">
+                      <span className="mt-1 shrink-0 text-[#967259]">▸</span>
+                      <span>{bullet}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 }
 
 /**
- * Experience section. Uses Swiper's EffectFlip to animate a 3D flip
- * between role cards. One card is visible at a time, centered.
- *
- * Section transition rule (position-based, not credit-based):
- *   - On the first card (Internship), scroll-up retreats to Home.
- *   - On the last card (Personal Projects), scroll-down advances to About.
- *   - On any middle card, scroll moves to the previous/next card.
- *
- * The active card persists across section re-entries via `lastIndexRef`:
- * returning to Experience from Home keeps the user where they left off.
- * The first visit always starts at slide 0 (Internship).
+ * Experience section: a stacked/fanned card deck, one role focused at a
+ * time. Desktop wheel and arrow keys cycle the deck (boundary triggers a
+ * section change via onAdvanceSection/onRetreatSection); tapping the
+ * left/right half of the front card cycles too, looping at the boundaries
+ * instead. Peeking side cards are clickable/keyboard-operable shortcuts to
+ * jump straight to them.
  */
-export default function Experience({
-  viewportW,
-  isActive,
-  onAdvanceSection,
-  onRetreatSection,
-}: ExperienceProps) {
-  const swiperRef = useRef<SwiperInstance | null>(null);
+export default function Experience({ viewportW, isActive, onAdvanceSection, onRetreatSection }: ExperienceProps) {
   const lastWheelAtRef = useRef(0);
   const onAdvanceRef = useRef(onAdvanceSection);
   const onRetreatRef = useRef(onRetreatSection);
-  // Persist the user's last position across re-entries. `null` means
-  // the user has never visited Experience before — start at 0.
+  // Persists the last-visited card across Experience re-entries within the
+  // same session; null means "start fresh at index 0" (set back to null
+  // whenever a boundary navigation hands off to another section).
   const lastIndexRef = useRef<number | null>(null);
-  // Visible tracker index so users see which card is active.
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(() => lastIndexRef.current ?? 0);
+  const activeIndexRef = useRef(activeIndex);
+  const isActiveRef = useRef(isActive);
 
   useEffect(() => {
     onAdvanceRef.current = onAdvanceSection;
@@ -206,37 +194,30 @@ export default function Experience({
   useEffect(() => {
     onRetreatRef.current = onRetreatSection;
   }, [onRetreatSection]);
-
-  // Mirror isActive into a ref so `navigate` (called from event
-  // handlers that may fire after a section change) sees the latest
-  // value without re-binding the wheel/tap listeners.
-  const isActiveRef = useRef(isActive);
   useEffect(() => {
     isActiveRef.current = isActive;
   }, [isActive]);
+  useEffect(() => {
+    activeIndexRef.current = activeIndex;
+    lastIndexRef.current = activeIndex;
+  }, [activeIndex]);
 
-  // Shared step function used by both wheel-scroll and tap-to-flip.
-  // Returns `true` if the action was consumed (caller should swallow
-  // any default behavior), `false` if it was rejected (e.g. swiper
-  // still animating). Direction is +1 for next card, -1 for previous.
-  // The `mode` flag controls how the carousel boundaries behave:
-  //
-  //   - `'section'` (desktop wheel): boundary tap fires the
-  //     `onAdvanceSection` / `onRetreatSection` callback so the
-  //     track slides to the adjacent section. First card retreats
-  //     to Home, last card advances to About.
-  //
-  //   - `'loop'` (mobile tap): boundary tap wraps the carousel so
-  //     the user can browse all three cards freely without leaving
-  //     Experience. Section change on mobile happens via horizontal
-  //     swipe (handled by the parent track in Home.tsx).
+  const lastIdx = ROLES.length - 1;
+
+  // direction: +1 = next card, -1 = previous card.
+  // mode 'section' (desktop wheel/arrow keys): at the FIRST card, going
+  //   back retreats to Home; at the LAST card, going forward advances to
+  //   About. Middle cards just move within the deck.
+  // mode 'loop' (tap/click on the front card): wraps around at the
+  //   boundaries instead of changing section, so users can freely browse
+  //   the deck by tapping; section change on mobile happens via horizontal
+  //   swipe on the parent track in Home.tsx, not via the deck itself.
+  // Reads the current index from a ref (not the `activeIndex` closure) so
+  // the wheel consumer below — registered once per `isActive` change, not
+  // per card change — always acts on the latest position.
   const navigate = (direction: 1 | -1, mode: 'loop' | 'section'): boolean => {
     if (!isActiveRef.current) return false;
-    const swiper = swiperRef.current;
-    if (!swiper) return false;
-    if (swiper.animating) return false;
-    const currentIdx = swiper.realIndex;
-    const lastIdx = ROLES.length - 1;
+    const currentIdx = activeIndexRef.current;
     const atEnd = direction === 1 && currentIdx >= lastIdx;
     const atStart = direction === -1 && currentIdx <= 0;
     if ((atEnd || atStart) && mode === 'section') {
@@ -245,17 +226,19 @@ export default function Experience({
       window.setTimeout(() => cb?.(), 0);
       return true;
     }
-    // Loop mode passes through here at the boundaries — Swiper's
-    // loop=true handles the wrap with the same flip animation.
-    if (direction === 1) swiper.slideNext();
-    else swiper.slidePrev();
+    if (mode === 'loop') {
+      setActiveIndex((i) => (direction === 1 ? (i + 1) % ROLES.length : (i - 1 + ROLES.length) % ROLES.length));
+    } else {
+      setActiveIndex((i) => Math.max(0, Math.min(lastIdx, i + direction)));
+    }
     return true;
   };
 
-  // Wheel consumer — position-based navigation. Desktop uses wheel
-  // events; on mobile the section is changed via horizontal swipe
-  // (handled by the parent track in Home.tsx) and cards are flipped
-  // via tap (see `handleCardTap` below).
+  const goTo = (idx: number) => {
+    if (!isActiveRef.current || idx === activeIndexRef.current) return;
+    setActiveIndex(idx);
+  };
+
   useEffect(() => {
     setWheelConsumer((deltaY) => {
       if (!isActive) return false;
@@ -268,22 +251,22 @@ export default function Experience({
     return () => setWheelConsumer(null);
   }, [isActive]);
 
-  // Keep the visible tracker and persistence ref in sync whenever
-  // Swiper lands on a slide (including programmatic jumps).
-  const handleSlideChange = (swiper: SwiperInstance) => {
-    const realIdx = swiper.realIndex;
-    setActiveIndex(realIdx);
-    lastIndexRef.current = realIdx;
-  };
+  // Arrow keys mirror wheel semantics so keyboard-only desktop users have
+  // the same navigation reach as the wheel, on top of the peek-card buttons.
+  useEffect(() => {
+    if (!isActive) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') navigate(1, 'section');
+      else if (e.key === 'ArrowLeft') navigate(-1, 'section');
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isActive]);
 
-  // Tap-to-flip (mobile + desktop). Users can tap/click the left half
-  // of the active card to go to the previous role, or the right half
-  // to go to the next. On desktop this complements the wheel scroll.
-  // Cards loop freely on tap; wheel-driven navigation still triggers
-  // section changes at the first/last card boundaries.
+  // Tap/click left half of the front card = previous, right half = next
+  // (loops). Ignored when the click lands on an interactive descendant
+  // (e.g. a project link) so those keep working normally.
   const handleCardTap = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Ignore taps/clicks that originated on a link/button inside the card —
-    // those should follow their own click target.
     const target = e.target as HTMLElement;
     if (target.closest('a, button, input, textarea, select')) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -309,109 +292,54 @@ export default function Experience({
         <h2 className="section-title section-title-experience mb-0">Experience</h2>
       </div>
 
-      {/* Flip carousel — one card visible at a time. Swiper handles the
-          3D flip animation between slides via the EffectFlip module.
-          The wrapper centers the Swiper in the section's content area
-          (capped at 1100px) so the card stays anchored regardless of
-          viewport width. */}
-      <div
-        className="relative mx-auto flex-1 min-h-0 w-full flex flex-col items-center justify-start gap-3 md:gap-4 pt-2"
-        style={{ maxWidth: '1100px' }}
-      >
-        <Swiper
-          // Imperative API — we drive slide changes via swiperRef, not
-          // by binding a controlled `slideTo` prop.
-          onSwiper={(s) => {
-            swiperRef.current = s;
-            // Restore the user's last position if they previously
-            // visited Experience. First-time visitors start at 0.
-            const saved = lastIndexRef.current;
-            if (saved !== null && saved > 0) {
-              s.slideToLoop(saved, 0);
-            }
-            setActiveIndex(s.realIndex);
-          }}
-          onSlideChange={handleSlideChange}
-          effect="flip"
-          grabCursor
-          // Disable Swiper's touch handling on mobile so horizontal
-          // swipes pass through to the parent track and change
-          // sections, instead of being captured here to flip cards.
-          // Cards are flipped via tap (handleCardTap) on mobile; the
-          // wheel consumer drives flips on desktop.
-          allowTouchMove={false}
-          // Loop enabled so the tap-to-flip path can wrap from the
-          // last card back to the first (and vice versa) with the
-          // same flip animation. On desktop the `navigate(..., 'section')`
-          // call short-circuits the boundary BEFORE calling
-          // slideNext/slidePrev, so the wrap never fires there — the
-          // section-change callback handles the boundary instead.
-          loop={true}
-          // Speed is irrelevant for wheel-driven flips — Swiper only
-          // animates when its internal API is called. We set it anyway
-          // so any future touch-driven flips look consistent.
-          speed={600}
-          flipEffect={{ slideShadows: false }}
-          modules={[EffectFlip]}
-          mousewheel={{
-            // We handle wheel events ourselves via the consumer
-            // registry. Disable Swiper's built-in mousewheel so the
-            // two systems don't double-fire.
-            enabled: false,
-          }}
-          // Critical: hide all Swiper chrome (pagination dots, nav
-            // arrows, scrollbar). The flip is the only visual cue.
-          pagination={false}
-          navigation={false}
-          scrollbar={false}
-          className="w-full flex-1 min-h-0"
-        >
-          {ROLES.map((role) => (
-            <SwiperSlide
-              key={role.title}
-              // Inline style centers the slide content as a fallback
-              // for browsers where the Tailwind flex utilities don't
-              // apply (Swiper sometimes overrides slide display).
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-              }}
-            >
-              <div
-                onClick={handleCardTap}
-                // Tap/click target uses cursor-pointer so users get a hint
-                // that the card is interactive on both mobile and desktop.
-                className="cursor-pointer select-none h-full experience-card-frame"
-              >
-                <ActiveCardContent role={role} />
-              </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
+      {/* Stacked/fanned deck: every role stays mounted at all times so
+          framer-motion can animate transform/opacity between positions
+          instead of mounting/unmounting cards on every navigation. */}
+      <div className="flex-1 min-h-0 flex items-center justify-center overflow-visible">
+        <div className="experience-deck">
+          {ROLES.map((role, idx) => {
+            const offset = idx - activeIndex;
+            const abs = Math.abs(offset);
+            const isFront = offset === 0;
+            const sign = Math.sign(offset);
+            const clampedAbs = Math.min(abs, MAX_PEEK + 1);
+            const hidden = abs > MAX_PEEK;
+            const tint = idx % TINT_COUNT;
 
-        {/* Card tracker dots — shows how many experience cards exist and
-            which one is active. Clicking a dot jumps directly to that card. */}
-        <div className="flex items-center gap-2 md:gap-3 shrink-0 pb-1 md:pb-0">
-          {ROLES.map((role, idx) => (
-            <button
-              key={role.title}
-              type="button"
-              aria-label={`Go to ${role.title}`}
-              aria-current={idx === activeIndex ? 'true' : undefined}
-              onClick={() => {
-                const swiper = swiperRef.current;
-                if (!swiper) return;
-                swiper.slideToLoop(idx);
-              }}
-              className={`rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#967259] ${
-                idx === activeIndex
-                  ? 'w-10 md:w-8 h-2 md:h-2.5 bg-[#ece0d1] shadow-[0_0_10px_rgba(236,224,209,0.4)]'
-                  : 'w-2 md:w-2.5 h-2 md:h-2.5 bg-[#967259]/50 hover:bg-[#967259]'
-              }`}
-            />
-          ))}
+            return (
+              <motion.div
+                key={role.title}
+                className={`experience-deck-card experience-deck-card--tint-${tint}${isFront ? ' experience-deck-card--front' : ''}`}
+                style={{ zIndex: ROLES.length + 10 - clampedAbs, pointerEvents: hidden ? 'none' : undefined }}
+                initial={false}
+                animate={{
+                  x: `${sign * clampedAbs * PEEK_STEP_X}%`,
+                  rotate: sign * clampedAbs * PEEK_STEP_ROTATE,
+                  scale: 1 - clampedAbs * PEEK_SCALE_STEP,
+                  opacity: hidden ? 0 : 1 - clampedAbs * PEEK_OPACITY_STEP,
+                }}
+                transition={DECK_SPRING}
+                role={isFront ? 'group' : 'button'}
+                tabIndex={hidden || isFront ? -1 : 0}
+                aria-hidden={hidden || undefined}
+                aria-label={!isFront ? `Show ${role.title} at ${role.company}` : undefined}
+                aria-roledescription={isFront ? 'slide' : undefined}
+                onClick={isFront ? handleCardTap : () => goTo(idx)}
+                onKeyDown={
+                  isFront
+                    ? undefined
+                    : (e: React.KeyboardEvent) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          goTo(idx);
+                        }
+                      }
+                }
+              >
+                <RoleCardContent role={role} isFront={isFront} />
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </motion.section>

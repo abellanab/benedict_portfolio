@@ -7,16 +7,16 @@ import {
 } from 'framer-motion';
 import {
   Mail,
-  FileText,
+  LayoutGrid,
   Home as HomeIcon,
   Briefcase,
   User,
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useMobile';
 import Hero from './hero';
-import Experience, { getWheelConsumer } from './experience';
+import Experience, { getWheelConsumer as getExperienceWheelConsumer } from './experience';
 import AboutMe from './aboutme';
-import Resume from './resume';
+import Projects, { getWheelConsumer as getProjectsWheelConsumer } from './resume';
 import ContactMe from './contactme';
 
 const SECTIONS = ['home', 'experience', 'about', 'resume', 'contact'] as const;
@@ -138,9 +138,9 @@ export default function Home() {
       const delta =
         e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
       // If the active section has registered a wheel consumer (e.g. the
-      // Experience card), let it handle the wheel and skip the track
-      // advance. Falls back to section-track advance otherwise.
-      const consumer = getWheelConsumer();
+      // Experience or Projects deck), let it handle the wheel and skip the
+      // track advance. Falls back to section-track advance otherwise.
+      const consumer = getExperienceWheelConsumer() ?? getProjectsWheelConsumer();
       if (consumer && consumer(delta)) {
         return;
       }
@@ -312,9 +312,9 @@ export default function Home() {
         <button
           onClick={() => scrollToSection('resume')}
           className={`nav-icon-btn ${activeSection === 'resume' ? 'active' : ''}`}
-          title="Resume"
+          title="Projects"
         >
-          <FileText size={20} />
+          <LayoutGrid size={20} />
         </button>
 
         <button
@@ -355,9 +355,9 @@ export default function Home() {
         <button
           onClick={() => scrollToSection('resume')}
           className={`nav-icon-btn ${activeSection === 'resume' ? 'active' : ''}`}
-          title="Resume"
+          title="Projects"
         >
-          <FileText size={20} />
+          <LayoutGrid size={20} />
         </button>
 
         <button
@@ -409,8 +409,13 @@ export default function Home() {
           {/* About Section */}
           <AboutMe viewportW={viewportW} isActive={activeSection === 'about'} />
 
-          {/* Resume Section */}
-          <Resume viewportW={viewportW} isActive={activeSection === 'resume'} />
+          {/* Projects Section */}
+          <Projects
+            viewportW={viewportW}
+            isActive={activeSection === 'resume'}
+            onAdvanceSection={() => goToIndex(SECTIONS.indexOf('contact'))}
+            onRetreatSection={() => goToIndex(SECTIONS.indexOf('about'))}
+          />
 
           {/* Contact Section */}
           <ContactMe

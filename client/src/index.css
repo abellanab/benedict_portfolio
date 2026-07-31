@@ -404,34 +404,281 @@
     background-color: rgba(219, 193, 172, 0.8);
   }
 
-  .experience-card-frame {
-    width: min(88%, 860px);
-    max-height: min(90%, 1060px);
-  }
-
   .experience-content {
-    padding: clamp(1rem, 2vw, 2rem);
+    padding: clamp(1rem, 2vw, 1.75rem);
   }
 
-  @media (max-width: 1280px) and (min-width: 1025px) {
-    .experience-card-frame {
-      width: min(88%, 760px);
-      max-height: min(84%, 780px);
+  /* Stacked/fanned experience deck: one focused card at a time, with up to
+     MAX_PEEK (experience.tsx) neighbors peeking out from behind its
+     left/right edges. All cards share this fixed frame — position:
+     absolute + inset:0 — so framer-motion only ever animates transform/
+     opacity between them, never layout. */
+  .experience-deck {
+    position: relative;
+    width: 100%;
+    max-width: 340px;
+    height: clamp(380px, 58vh, 480px);
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .experience-deck {
+      max-width: 460px;
+      height: clamp(440px, 60vh, 520px);
     }
   }
 
-  @media (max-width: 1024px) and (min-width: 768px) {
-    .experience-card-frame {
-      width: min(88%, 620px);
-      max-height: min(80%, 620px);
+  @media (min-width: 1025px) and (max-width: 1280px) {
+    .experience-deck {
+      max-width: 530px;
+      height: clamp(460px, 65vh, 570px);
     }
   }
 
-  @media (max-width: 767px) {
-    .experience-card-frame {
-      width: min(88vw, 340px);
-      max-height: min(72%, 540px);
+  @media (min-width: 1281px) {
+    .experience-deck {
+      max-width: 600px;
+      height: clamp(480px, 68vh, 610px);
     }
+  }
+
+  .experience-deck-card {
+    position: absolute;
+    inset: 0;
+    border-radius: 1.25rem;
+    box-shadow: 0 22px 45px rgba(0, 0, 0, 0.45), 0 4px 14px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(236, 224, 209, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .experience-deck-card--front {
+    cursor: default;
+  }
+
+  /* Scrim: guarantees the title/date text always sits on a dark, near-
+     opaque base regardless of what's behind it. */
+  .experience-deck-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(16, 9, 4, 0.6) 0%, rgba(16, 9, 4, 0.15) 32%, rgba(16, 9, 4, 0) 48%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* All three deck cards share the same background as the section itself
+     (.content-section-primary) so the deck reads as one continuous surface
+     rather than a set of differently colored cards. */
+  .experience-deck-card--tint-0,
+  .experience-deck-card--tint-1,
+  .experience-deck-card--tint-2 {
+    background: linear-gradient(135deg, rgba(99, 72, 50, 0.96) 0%, rgba(56, 34, 15, 1) 100%);
+  }
+
+  .experience-deck-card:focus-visible {
+    outline: 2px solid #ece0d1;
+    outline-offset: 3px;
+  }
+
+  .experience-deck-card-inner {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .experience-deck-card-inner .role-chip {
+    font-size: 0.8125rem;
+    padding: 0.375rem 0.875rem;
+  }
+
+  .experience-deck-title {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: clamp(1.875rem, 2.6vw, 2.375rem);
+    line-height: 1.2;
+    margin-top: 0.375rem;
+  }
+
+  .experience-deck-dates {
+    display: block;
+    margin-top: 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #ece0d1;
+  }
+
+  .experience-deck-projects {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-height: 0;
+  }
+
+  /* Peeking (non-front) cards only show the header — their body content is
+     mostly hidden behind the front card anyway, and skipping it keeps them
+     cheap to keep mounted for smooth cross-fade/slide as activeIndex
+     changes. */
+  .experience-deck-card:not(.experience-deck-card--front) .experience-deck-card-inner {
+    justify-content: flex-start;
+  }
+
+  /* Projects deck: reuses .experience-deck-card/--tint-N/--front/-card-inner
+     as-is (sizing comes entirely from the parent .projects-deck, which is
+     deliberately wider than .experience-deck — an embedded iframe preview
+     needs real width to read as more than a thumbnail). */
+  .projects-deck {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    height: clamp(420px, 60vh, 540px);
+    margin: 0 auto;
+  }
+
+  @media (min-width: 768px) and (max-width: 1024px) {
+    .projects-deck {
+      max-width: 540px;
+      height: clamp(460px, 62vh, 580px);
+    }
+  }
+
+  @media (min-width: 1025px) and (max-width: 1280px) {
+    .projects-deck {
+      max-width: 660px;
+      height: clamp(480px, 66vh, 620px);
+    }
+  }
+
+  @media (min-width: 1281px) {
+    .projects-deck {
+      max-width: 780px;
+      height: clamp(500px, 70vh, 660px);
+    }
+  }
+
+  .projects-deck-frame {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 1px solid rgba(150, 114, 89, 0.4);
+    background-color: #fff;
+  }
+
+  .projects-deck-frame-spinner {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #38220f;
+  }
+
+  .projects-deck-frame-spinner::after {
+    content: '';
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    border: 3px solid rgba(236, 224, 209, 0.25);
+    border-top-color: #ece0d1;
+    animation: projects-deck-spin 0.8s linear infinite;
+  }
+
+  @keyframes projects-deck-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .projects-deck-frame--fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    text-align: center;
+    background-color: #38220f;
+  }
+
+  .projects-deck-fallback-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    background-color: rgba(150, 114, 89, 0.25);
+    color: #ece0d1;
+  }
+
+  .projects-deck-fallback-text {
+    color: #f8efe6;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    max-width: 22rem;
+  }
+
+  .projects-deck-fallback-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 9999px;
+    background-color: #967259;
+    color: #ffffff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease-out;
+  }
+
+  .projects-deck-fallback-cta:hover {
+    background-color: #634832;
+  }
+
+  .projects-deck-fallback-cta:focus-visible {
+    outline: 2px solid #ece0d1;
+    outline-offset: 2px;
+  }
+
+  .projects-deck-description {
+    max-height: 6rem;
+    flex-shrink: 0;
+  }
+
+  .projects-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: clamp(2.25rem, 4.5vw, 3rem);
+    height: clamp(2.25rem, 4.5vw, 3rem);
+    border-radius: 9999px;
+    border: 1px solid rgba(150, 114, 89, 0.5);
+    background-color: rgba(56, 34, 15, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #ece0d1;
+    transition: all 0.2s ease-out;
+    flex-shrink: 0;
+  }
+
+  .projects-nav-btn:hover {
+    background-color: rgba(99, 72, 50, 0.95);
+    border-color: #dbc1ac;
+    color: #f7efe7;
+  }
+
+  .projects-nav-btn:focus-visible {
+    outline: 2px solid #ece0d1;
+    outline-offset: 2px;
   }
 
   .skill-tag {
@@ -571,18 +818,6 @@
     padding: clamp(1rem, 1.75vw, 1.75rem);
   }
 
-  .resume-preview {
-    width: 100%;
-    max-width: min(70%, 280px);
-    max-height: min(50vh, 480px);
-    aspect-ratio: 3 / 4;
-    overflow: hidden;
-    border-radius: 0.75rem;
-    border: 1px solid rgba(150, 114, 89, 0.4);
-    background-color: #fff;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
-  }
-
   /* Small laptop / tablet landscape (768px–1024px): keep layouts compact
      and avoid two-column grids that clip or overflow. */
   @media (max-width: 1024px) and (min-width: 768px) {
@@ -615,11 +850,6 @@
       padding: 1rem;
     }
 
-    .experience-card-frame {
-      width: min(88%, 620px);
-      max-height: min(80%, 620px);
-    }
-
     .experience-content {
       padding: 1rem;
     }
@@ -627,11 +857,6 @@
     .contact-grid {
       grid-template-columns: 1fr;
       gap: 1.25rem;
-    }
-
-    .resume-preview {
-      max-width: min(60%, 260px);
-      max-height: min(45vh, 400px);
     }
 
     .nav-icon-btn {
@@ -699,8 +924,8 @@
     padding: 1rem;
   }
 
-  .experience-card-frame {
-    max-height: min(72%, 520px);
+  .experience-deck {
+    height: clamp(340px, 54vh, 440px);
   }
 
   .about-grid {
@@ -717,8 +942,8 @@
     padding: 1rem;
   }
 
-  .resume-preview {
-    max-height: min(45vh, 360px);
+  .projects-deck {
+    height: clamp(360px, 54vh, 460px);
   }
 
   .contact-grid {
