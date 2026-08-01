@@ -223,9 +223,17 @@ export default function Experience({ viewportW, isActive, onAdvanceSection, onRe
     setActiveIndex(idx);
   };
 
+  // Only register a real consumer while active — registering unconditionally
+  // (even a stub that returns false when inactive) would leave this module's
+  // getWheelConsumer() permanently non-null, breaking Home.tsx's
+  // `getExperienceWheelConsumer() ?? getProjectsWheelConsumer()` fallback,
+  // which only falls through on an actual null.
   useEffect(() => {
+    if (!isActive) {
+      setWheelConsumer(null);
+      return;
+    }
     setWheelConsumer((deltaY) => {
-      if (!isActive) return false;
       const now = Date.now();
       if (now - lastWheelAtRef.current < WHEEL_DEBOUNCE_MS) return true;
       if (Math.abs(deltaY) < 10) return true;

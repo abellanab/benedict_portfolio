@@ -76,6 +76,14 @@ const IFRAME_LOAD_TIMEOUT_MS = 6000;
 // browser-rendered error page. This timeout is a best-effort fallback for
 // sites we haven't manually verified; project.embeddable is the reliable
 // override for known-bad ones (see TapOK above).
+//
+// A live cross-origin iframe also swallows wheel events entirely — the
+// parent page's window-level wheel listener (Home.tsx) never sees them —
+// so a bare iframe would break scroll-to-navigate wherever the cursor
+// happens to be over the preview. A permanent transparent overlay (part of
+// our own document, not the iframe's) sits on top so wheel scroll always
+// reaches the deck's navigation, matching experience.tsx exactly; direct
+// interaction with the embedded site happens via the "Visit site" link.
 function ProjectPreviewFrame({ project, className }: { project: Project; className?: string }) {
   const embeddable = project.embeddable !== false;
   const [status, setStatus] = useState<'loading' | 'loaded' | 'failed'>(embeddable ? 'loading' : 'failed');
@@ -117,6 +125,7 @@ function ProjectPreviewFrame({ project, className }: { project: Project; classNa
         className="h-full w-full"
         onLoad={() => setStatus('loaded')}
       />
+      <div className="projects-deck-frame-overlay" aria-hidden="true" />
     </div>
   );
 }
@@ -217,9 +226,17 @@ export default function Projects({ viewportW, isActive, onAdvanceSection, onRetr
     setActiveIndex(idx);
   };
 
+  // Only register a real consumer while active — registering unconditionally
+  // (even a stub that returns false when inactive) would leave this module's
+  // getWheelConsumer() permanently non-null, breaking Home.tsx's
+  // `getExperienceWheelConsumer() ?? getProjectsWheelConsumer()` fallback,
+  // which only falls through on an actual null.
   useEffect(() => {
+    if (!isActive) {
+      setWheelConsumer(null);
+      return;
+    }
     setWheelConsumer((deltaY) => {
-      if (!isActive) return false;
       const now = Date.now();
       if (now - lastWheelAtRef.current < WHEEL_DEBOUNCE_MS) return true;
       if (Math.abs(deltaY) < 10) return true;

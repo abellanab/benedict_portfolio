@@ -598,6 +598,15 @@
     }
   }
 
+  /* Transparent, always-on: keeps wheel/click events on our own document
+     instead of inside the cross-origin iframe, so scroll always drives
+     card navigation the same way it does everywhere else on the card. */
+  .projects-deck-frame-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+  }
+
   .projects-deck-frame--fallback {
     display: flex;
     flex-direction: column;
