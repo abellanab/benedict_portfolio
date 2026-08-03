@@ -132,7 +132,7 @@ export default function AboutMe({ viewportW, isActive }: AboutMeProps) {
             <div className="glass-card-dark about-bio flex flex-col justify-between h-full">
               <div className="space-y-5 text-base md:text-lg text-gray-200 leading-relaxed text-center md:text-left">
                 <p>
-                  I am Benedict Abellana, a Computer Engineering student at the University of San Carlos
+                  I am Benedict Abellana, a Computer Engineering graduate at the University of San Carlos
                   who is passionate about frontend development and aspire to be a skilled developer
                   with a deep love for creating beautiful, functional web experiences. I also love creating AI agents and automating workflows to make life easier.
                   As of now, I spend most of my free time working my own startups building products that users will love.
