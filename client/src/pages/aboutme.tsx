@@ -23,6 +23,8 @@ const SKILLS = [
   'Automation',
   'N8N',
   'AI Agents',
+  'MySQL',
+  'C#',
 ];
 
 // Profile photo shown on the About section.
