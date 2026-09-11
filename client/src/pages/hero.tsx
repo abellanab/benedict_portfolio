@@ -88,7 +88,7 @@ export default function Hero({ viewportW, totalWidth, bgX, fgX, onCtaClick, isAc
           className="text-[clamp(0.875rem,2.2vw,1.5rem)] font-mono mb-6 md:mb-8 font-light break-words"
           style={{ color: '#634832' }}
         >
-          AI Engineer | Frontend Developer | Prompt Engineer | Coffee Enthusiast
+          Software Developer | Automation Engineer | Coffee Enthusiast
         </p>
 
         {/* Tech Stack Badges */}
